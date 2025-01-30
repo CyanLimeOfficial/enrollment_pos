@@ -14,6 +14,10 @@
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}" />
 
+    <!-- Datatables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.css" rel="stylesheet">
+    <script src="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.js"></script>
   </head>
   <body>
     <!-- ======== Preloader =========== -->
@@ -27,7 +31,7 @@
       <div class="navbar-logo">
         <a href="index.html">
           <img src="{{ asset('assets/custom_assets/Picture/sign-in-pic.png')}}" alt="logo" height="50px"/>
-          <span class="text"><h2>CMS</h2></span>
+          <span class="text"><h2 style="color: #F5F8FC">POS</h2></span>
         </a>
       </div>
       <nav class="sidebar-nav">
@@ -356,6 +360,21 @@
                   <p class="text-sm mb-20">
                     List of patients.
                   </p>
+                  <div class="container mt-3">
+                      @if (session('success'))
+                          <div class="alert alert-success alert-dismissible fade show" role="alert">
+                              <strong>Success!</strong> {{ session('success') }}
+                              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                          </div>
+                      @endif
+
+                      @if (session('error'))
+                          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                              <strong>Error!</strong> {{ session('error') }}
+                              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                          </div>
+                      @endif
+                  </div>
                   <div class="table-wrapper table-responsive">
                     <table id="example" class="table table-striped cell-border table-hover dataTable">
                     <thead>
@@ -423,8 +442,8 @@
                     </table>
                     <!-- end table -->
                   </div>
-                    <!-- Add User -->
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal" style="margin-top: 20px;">
+                    <!-- Add Patient -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPatientModal" style="margin-top: 20px;">
                       Add Patient
                     </button>
                     <script>
@@ -436,30 +455,21 @@
                         }
                       }
                     </script>
-                    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+                    <div class="modal fade" id="addPatientModal" tabindex="-1" aria-labelledby="addPatientModal" aria-hidden="true">
                       <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                            <h5 class="modal-title" id="addPatientModal">Add Patient</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
-                          <form>
-                              <!-- Patient Type -->
-                              <div class="mb-3">
-                                <label>Patient Type <span style="color: red;">*</span></label>
-                                <div>
-                                  <input type="radio" id="member" name="patient_type" value="Member" required>
-                                  <label for="member">Member</label>
-                                  <input type="radio" id="dependent" name="patient_type" value="Dependent" required>
-                                  <label for="dependent">Dependent</label>
-                                </div>
-                              </div>
-
+                            <form id="addPatientForm" action="{{ route('patients.store') }}" class="needs-validation" method="POST" enctype="multipart/form-data" novalidate>
+                            @csrf
                               <!-- PhilHealth Identification Number -->
                               <div class="mb-3">
-                                <label for="pin">PhilHealth Identification Number (PIN) <span style="color: red;">*</span></label>
-                                <input type="number" class="form-control" id="pin" name="pin" required>
+                                <label for="philhealth_id">PhilHealth Identification Number (PIN) <span style="color: red;">*</span></label>
+                                <input type="number" class="form-control" id="philhealth_id" name="philhealth_id" required>
+                                <div class="invalid-feedback">Please enter your PhilHealth PIN.</div>
                               </div>
 
                               <!-- Purpose -->
@@ -471,6 +481,7 @@
                                   <input type="radio" id="updating" name="purpose" value="Updating/Amendment" required>
                                   <label for="updating">Updating/Amendment</label>
                                 </div>
+                                <div class="invalid-feedback">Please select a purpose.</div>
                               </div>
 
                               <!-- Preferred KonSulta Provider -->
@@ -484,21 +495,24 @@
 
                               <!-- Member Name -->
                               <div class="mb-3">
-                                <label>Member Name</label>
+                                <label>Member Name <span style="color: red;">*</span></label>
                                 <div class="row">
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="member_first_name" placeholder="First Name" required>
+                                    <div class="invalid-feedback">Please enter your first name.</div>
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" id="member_middle_name" name="member_middle_name" placeholder="Middle Name">
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="member_last_name" placeholder="Last Name" required>
+                                    <div class="invalid-feedback">Please enter your last name.</div>
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="member_name_extension" placeholder="Name Extension">
                                   </div>
                                 </div>
+                                <!-- No Middle Name Checkbox for Member Name -->
                                 <div class="form-check">
                                   <input class="form-check-input" type="checkbox" id="member_no_middle_name" onclick="toggleMiddleName(this, 'member_middle_name')">
                                   <label class="form-check-label" for="member_no_middle_name">No Middle Name</label>
@@ -515,12 +529,14 @@
                                 <div class="row">
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="mother_first_name" placeholder="First Name" required>
+                                    <div class="invalid-feedback">Please enter your mother's first name.</div>
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" id="mother_middle_name" name="mother_middle_name" placeholder="Middle Name">
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="mother_last_name" placeholder="Last Name" required>
+                                    <div class="invalid-feedback">Please enter your mother's last name.</div>
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" name="mother_name_extension" placeholder="Name Extension">
@@ -565,24 +581,20 @@
 
                               <!-- Date of Birth -->
                               <div class="mb-3">
-                                <label>Date of Birth</label>
+                                <label>Date of Birth <span style="color: red;">*</span></label>
                                 <div class="row">
                                   <div class="col-md-2">
-                                    <input type="text" class="form-control" name="dob_month" placeholder="MM" maxlength="2" required>
-                                  </div>
-                                  <div class="col-md-2">
-                                    <input type="text" class="form-control" name="dob_day" placeholder="DD" maxlength="2" required>
-                                  </div>
-                                  <div class="col-md-2">
-                                    <input type="text" class="form-control" name="dob_year" placeholder="YYYY" maxlength="4" required>
+                                    <input type="date" class="form-control" name="date_of_birth" style="min-width: 200px;"required>
+                                    <div class="invalid-feedback">Please enter the date of birth.</div>
                                   </div>
                                 </div>
                               </div>
 
                               <!-- Place of Birth -->
                               <div class="mb-3">
-                                <label for="place_of_birth">Place of Birth</label>
-                                <input type="text" class="form-control" id="place_of_birth" name="place_of_birth">
+                                <label for="place_of_birth">Place of Birth <span style="color: red;">*</span></label>
+                                <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" required>
+                                <div class="invalid-feedback">Please enter the place of birth.</div>
                               </div>
 
                               <!-- Sex -->
@@ -594,8 +606,9 @@
                                   <input type="radio" id="female" name="sex" value="Female" required>
                                   <label for="female">Female</label>
                                 </div>
+                                <div class="invalid-feedback">Please select your sex.</div>
                               </div>
-                              
+
                               <!-- Civil Status -->
                               <div class="mb-3">
                                 <label for="civil_status">Civil Status</label>
@@ -606,7 +619,9 @@
                                   <option value="Widower">Widower</option>
                                   <option value="Legally Separated">Legally Separated</option>
                                 </select>
+                                <div class="invalid-feedback">Please select your civil status.</div>
                               </div>
+
                               <!-- Citizenship -->
                               <div class="mb-3">
                                 <label for="citizenship">Citizenship</label>
@@ -615,7 +630,9 @@
                                   <option value="Foreign National">Foreign National</option>
                                   <option value="Dual Citizen">Dual Citizen</option>
                                 </select>
+                                <div class="invalid-feedback">Please select your citizenship.</div>
                               </div>
+
                               <!-- Philsys ID Number -->
                               <div class="mb-3">
                                 <label for="philsys_id">Philsys ID Number (Optional)</label>
@@ -630,31 +647,34 @@
 
                               <!-- Address and Contact Details -->
                               <div class="mb-3">
-                                <label for="address">Address</label>
+                                <label for="address">Address <span style="color: red;">*</span></label>
                                 <input type="text" class="form-control" id="address" name="address" required>
+                                <div class="invalid-feedback">Please enter your address.</div>
                               </div>
 
                               <div class="mb-3">
                                 <label for="contact_number">Contact Number (Optional)</label>
-                                <input type="text" class="form-control" id="contact_number" name="contact_number">
+                                <input type="text" class="form-control" id="contact_number" name="contact_number" pattern="\d{10,11}">
+                                <div class="invalid-feedback">Please enter a valid contact number (10-11 digits).</div>
                               </div>
 
                               <div class="mb-3">
                                 <label for="home_phone">Home Phone Number (Optional)</label>
-                                <input type="text" class="form-control" id="home_phone" name="home_phone">
+                                <input type="text" class="form-control" id="home_phone" name="home_phone" pattern="\d{7,11}">
+                                <div class="invalid-feedback">Please enter a valid home phone number (7-11 digits).</div>
                               </div>
 
                               <div class="mb-3">
                                 <label for="business_phone">Business (Direct Line) (Optional)</label>
-                                <input type="text" class="form-control" id="business_phone" name="business_phone">
+                                <input type="text" class="form-control" id="business_phone" name="business_phone" pattern="\d{7,11}">
+                                <div class="invalid-feedback">Please enter a valid business phone number (7-11 digits).</div>
                               </div>
 
                               <div class="mb-3">
-                                <label for="email_address">Email Address <span style="color: red;">*</span></label>
-                                <input type="email" class="form-control" id="email_address" name="email_address" required>
+                                <label for="email_address">Email Address</label>
+                                <input type="email" class="form-control" id="email_address" name="email_address">
                               </div>
 
-                              <!-- Mailing Address -->
                               <div class="mb-3">
                                 <label for="mailing_address">Mailing Address</label>
                                 <div>
@@ -673,12 +693,13 @@
                                 </div>
                                 <!-- Wrapper for Dependent Fields -->
                                 <div id="dependents-wrapper">
-                                  <!-- Initial Row (can be duplicated) -->
+                                  <!-- Initial Row (Dependent 1) -->
                                   <div class="dependent-entry mb-3">
                                     <div class="row">
                                       <div class="col-md-3">
                                         <label for="dependent_first_name_0">First Name</label>
-                                        <input type="text" class="form-control" id="dependent_first_name_0" name="dependent_first_name[]">
+                                        <input type="text" class="form-control" id="dependent_first_name_0" name="dependent_first_name[]" required>
+                                        <div class="invalid-feedback">Please enter the dependent's first name.</div>
                                       </div>
                                       <div class="col-md-3">
                                         <label for="dependent_middle_name_0">Middle Name</label>
@@ -686,26 +707,34 @@
                                       </div>
                                       <div class="col-md-3">
                                         <label for="dependent_last_name_0">Last Name</label>
-                                        <input type="text" class="form-control" id="dependent_last_name_0" name="dependent_last_name[]">
+                                        <input type="text" class="form-control" id="dependent_last_name_0" name="dependent_last_name[]" required>
+                                        <div class="invalid-feedback">Please enter the dependent's last name.</div>
                                       </div>
                                       <div class="col-md-3">
                                         <label for="dependent_name_extension_0">Name Extension</label>
                                         <input type="text" class="form-control" id="dependent_name_extension_0" name="dependent_name_extension[]">
                                       </div>
                                     </div>
-                                    
+
                                     <div class="row">
-                                      <div class="col-md-3">
+                                      <div class="mb-3">
                                         <label for="dependent_citizenship_0">Citizenship</label>
-                                        <input type="text" class="form-control" id="dependent_citizenship_0" name="dependent_citizenship[]">
+                                        <select id="dependent_citizenship_0" name="dependent_citizenship[]" class="form-control" required>
+                                          <option value="Filipino">Filipino</option>
+                                          <option value="Foreign National">Foreign National</option>
+                                          <option value="Dual Citizen">Dual Citizen</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select your citizenship.</div>
                                       </div>
                                       <div class="col-md-3">
                                         <label for="dependent_relationship_0">Relationship</label>
-                                        <input type="text" class="form-control" id="dependent_relationship_0" name="dependent_relationship[]">
+                                        <input type="text" class="form-control" id="dependent_relationship_0" name="dependent_relationship[]" required>
+                                        <div class="invalid-feedback">Please enter the dependent's relationship.</div>
                                       </div>
                                       <div class="col-md-3">
                                         <label for="dependent_dob_0">Date of Birth</label>
-                                        <input type="date" class="form-control" id="dependent_dob_0" name="dependent_dob[]">
+                                        <input type="date" class="form-control" id="dependent_dob_0" name="dependent_dob[]" required>
+                                        <div class="invalid-feedback">Please enter the dependent's date of birth.</div>
                                       </div>
                                     </div>
 
@@ -714,10 +743,10 @@
                                         <label for="dependent_mononym_0">Mononym</label>
                                         <div class="form-check">
                                           <input type="checkbox" class="form-check-input" id="dependent_mononym_0" name="dependent_mononym[]">
-                                          <label class="form-check-label" for="dependent_mononym_0">Yes</label>
+                                          <label class="form-check-label" for="dependent_mononym_0" value="1">Yes</label>
                                         </div>
                                       </div>
-                                      
+
                                       <div class="col-md-3">
                                         <label for="dependent_no_middle_name_0">No Middle Name</label>
                                         <div class="form-check">
@@ -725,52 +754,249 @@
                                           <label class="form-check-label" for="dependent_no_middle_name_0">Yes</label>
                                         </div>
                                       </div>
-                                      
+
                                       <div class="col-md-3">
                                         <label for="dependent_permanent_disability_0">Permanent Disability</label>
                                         <div class="form-check">
                                           <input type="checkbox" class="form-check-input" id="dependent_permanent_disability_0" name="dependent_permanent_disability[]">
-                                          <label class="form-check-label" for="dependent_permanent_disability_0">Yes</label>
+                                          <label class="form-check-label" for="dependent_permanent_disability_0" value="1">Yes</label>
                                         </div>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
-
                                 <!-- Button to Add Dependent Row -->
                                 <button type="button" class="btn btn-primary" id="addDependentBtn">Add Dependent</button>
                               </div>
 
+                              <!-- Admission and Discharge Dates -->
+                              <div class="mb-3">
+                                <label>Admission Date <span style="color: red;">*</span></label>
+                                <input type="date" class="form-control" name="admission_date" required>
+                                <div class="invalid-feedback">Please enter the admission date.</div>
+                              </div>
+                              <div class="mb-3">
+                                <label>Discharge Date <span style="color: red;">*</span></label>
+                                <input type="date" class="form-control" name="discharge_date" required>
+                                <div class="invalid-feedback">Please enter the discharge date.</div>
+                              </div>
+
+                              <!-- Attachment Type 1 -->
+                              <div class="mb-3">
+                                  <label for="attachment_type_1">Type of Attachment (Member) <span style="color: red;">*</span></label>
+                                  <select id="attachment_type_1" name="attachment_type_1" class="form-control" required onchange="validateSelection()">
+                                      <option value="" disabled selected>Please select a type</option>
+                                      <option value="Dependent Birth Cert.">Dependent Birth Cert.</option>
+                                      <option value="Member Birth Cert.">Member Birth Cert.</option>
+                                      <option value="Marriage Cert.">Marriage Cert.</option>
+                                      <option value="Postal ID">Postal ID</option>
+                                      <option value="Senior ID">Senior ID</option>
+                                      <option value="Voter's ID">Voter's ID</option>
+                                      <option value="National ID">National ID</option>
+                                      <option value="Voter's Cert.">Voter's Cert.</option>
+                                      <option value="Baptismal Cert.">Baptismal Cert.</option>
+                                      <option value="TIN ID">TIN ID</option>
+                                      <option value="PWD ID">PWD ID</option>
+                                      <option value="SSS ID">SSS ID</option>
+                                      <option value="UMID">UMID</option>
+                                      <option value="Barangay Cert.">Barangay Cert.</option>
+                                      <option value="PMRF">PMRF</option>
+                                      <option value="Driver's License">Driver's License</option>
+                                      <option value="Passport">Passport</option>
+                                      <option value="Affidavit">Affidavit</option>
+                                  </select>
+                                  <div class="invalid-feedback">Please select an attachment type.</div>
+                              </div>
+                              <div class="mb-3">
+                                  <label for="attachment_1" class="form-label">
+                                      <p>Attachment <span style="color: red;">*</span></p>
+                                  </label>
+                                  <input 
+                                      type="file" 
+                                      class="form-control" 
+                                      id="attachment_1" 
+                                      name="attachment_1" 
+                                      accept="image/*" 
+                                      required
+                                      disabled
+                                  />
+                                  <div class="invalid-feedback">Attachment is Required / File size must not exceed 10MB.</div>
+                              </div>
+
+                              <!-- Attachment Type 2 (Additional) -->
+                              <div class="mb-3">
+                                  <label for="attachment_type_2">Type of Attachment (Additional/Dependent)</label>
+                                  <select id="attachment_type_2" name="attachment_type_2" class="form-control" onchange="validateSelection2()" disabled>
+                                      <option value="" selected>Please select a type</option>
+                                      <option value="Dependent Birth Cert.">Dependent Birth Cert.</option>
+                                      <option value="Member Birth Cert.">Member Birth Cert.</option>
+                                      <option value="Marriage Cert.">Marriage Cert.</option>
+                                      <option value="Postal ID">Postal ID</option>
+                                      <option value="Senior ID">Senior ID</option>
+                                      <option value="Voter's ID">Voter's ID</option>
+                                      <option value="National ID">National ID</option>
+                                      <option value="Voter's Cert.">Voter's Cert.</option>
+                                      <option value="Baptismal Cert.">Baptismal Cert.</option>
+                                      <option value="TIN ID">TIN ID</option>
+                                      <option value="PWD ID">PWD ID</option>
+                                      <option value="SSS ID">SSS ID</option>
+                                      <option value="UMID">UMID</option>
+                                      <option value="Barangay Cert.">Barangay Cert.</option>
+                                      <option value="PMRF">PMRF</option>
+                                      <option value="Driver's License">Driver's License</option>
+                                      <option value="Passport">Passport</option>
+                                      <option value="Affidavit">Affidavit</option>
+                                  </select>
+                              </div>
+                              <div class="mb-3">
+                                  <label for="attachment_2" class="form-label">
+                                      <p>Attachment (Additional)</p>
+                                  </label>
+                                  <input 
+                                      type="file" 
+                                      class="form-control" 
+                                      id="attachment_2" 
+                                      name="attachment_2" 
+                                      accept="image/*" 
+                                      disabled
+                                  />
+                                  <div class="invalid-feedback">File size must not exceed 10MB.</div>
+                              </div>
+
                               <script>
-                                // JavaScript to Add Dependent Rows, but limit to 4 rows
-                                document.getElementById('addDependentBtn').addEventListener('click', function() {
+                                function validateSelection() {
+                                    const selectElement = document.getElementById("attachment_type_1");
+                                    const selectElementAdditional = document.getElementById("attachment_type_2");
+                                    const attachmentField = document.getElementById("attachment_1");
+
+                                    if (selectElement.value !== "") {
+                                        attachmentField.disabled = false; // Enable attachment field
+                                        selectElementAdditional.disabled = false; // Enable additional attachment type
+                                    } else {
+                                        attachmentField.disabled = true; // Keep attachment disabled if no selection
+                                        attachmentField.value = ""; // Clear the file input if disabled
+                                    }
+                                }
+
+                                function validateSelection2() {
+                                    const selectElement2 = document.getElementById("attachment_type_2");
+                                    const attachmentField2 = document.getElementById("attachment_1");
+
+                                    if (selectElement2.value !== "") {
+                                        attachmentField2.disabled = false; // Enable attachment field
+                                    } else {
+                                        attachmentField2.disabled = true; // Keep attachment disabled if no selection
+                                        attachmentField2.value = ""; // Clear the file input if disabled
+                                    }
+                                }
+                                </script>
+                                <!-- Reason/Purpose -->
+                                <div class="mb-3">
+                                  <label for="reason_or_purpose">Reason/Purpose <span style="color: red;">*</span></label>
+                                  <select id="reason_or_purpose" name="reason_or_purpose" class="form-control" required>
+                                    <option value="" disabled selected>Please select a reason</option>
+                                    <option value="Undeclared Dep. Child">Undeclared Dep. Child</option>
+                                    <option value="Undeclared Dep. Spouse">Undeclared Dep. Spouse</option>
+                                    <option value="Mispelled Last name">Mispelled Last name</option>
+                                    <option value="Indigent to POS">Indigent to POS</option>
+                                    <option value="Mispelled First name">Mispelled First name</option>
+                                    <option value="Mispelled Middle name">Mispelled Middle name</option>
+                                    <option value="NO PIN">NO PIN</option>
+                                    <option value="4P'S Renewal">4P'S Renewal</option>
+                                    <option value="Listahanan Renewal">Listahanan Renewal</option>
+                                    <option value="NHTS TO POS">NHTS TO POS</option>
+                                    <option value="NHTS 2024">NHTS 2024</option>
+                                    <option value="NHTS TO SENIOR">NHTS TO SENIOR</option>
+                                    <option value="UMID">UMID</option>
+                                    <option value="Senior Citizen">Senior Citizen</option>
+                                    <option value="Dual Pin">Dual Pin</option>
+                                    <option value="Incorrect date admission">Incorrect date admission</option>
+                                    <option value="Incorrect Birthdate">Incorrect Birthdate</option>
+                                    <option value="Member Category">Member Category</option>
+                                    <option value="FOR REGISTRATION">FOR REGISTRATION</option>
+                                  </select>
+                                  <div class="invalid-feedback">Please select a reason/purpose.</div>
+                                </div>
+
+                                <!-- Status -->
+                                <div class="mb-3">
+                                  <label for="status">Status<span style="color: red;">*</span></label>
+                                  <select id="status" name="status" class="form-control" required>
+                                    <option value="" disabled selected>Please select a status</option>
+                                    <option value="For Update">For Update</option>
+                                    <option value="Already Updated">Already Updated</option>
+                                  </select>
+                                  <div class="invalid-feedback">Please select a status.</div>
+                                </div>
+                                <!-- Submit Button -->
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </form>
+
+                            <script>
+                              // JavaScript for Form Validation
+                              (function () {
+                                'use strict';
+
+                                // Fetch the form and apply validation
+                                const form = document.querySelector('.needs-validation');
+
+                                form.addEventListener('submit', function (event) {
+                                  if (!form.checkValidity()) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                  }
+                                  form.classList.add('was-validated');
+                                }, false);
+
+                                // File Size Validation
+                                function validateFileSize(input) {
+                                  const maxSize = 10 * 1024 * 1024; // 10MB
+                                  if (input.files[0] && input.files[0].size > maxSize) {
+                                    input.setCustomValidity('File size must not exceed 10MB.');
+                                    input.reportValidity();
+                                  } else {
+                                    input.setCustomValidity('');
+                                  }
+                                }
+
+                                // Toggle Middle Name Fields
+                                function toggleMiddleName(checkbox, fieldId) {
+                                  const field = document.getElementById(fieldId);
+                                  if (checkbox.checked) {
+                                    field.disabled = true;
+                                    field.value = '';
+                                  } else {
+                                    field.disabled = false;
+                                  }
+                                }
+
+                                // Add Dependent Row
+                                document.getElementById('addDependentBtn').addEventListener('click', function () {
                                   const dependentWrapper = document.getElementById('dependents-wrapper');
                                   const dependentEntries = document.querySelectorAll('.dependent-entry');
-                                  
+
                                   if (dependentEntries.length < 4) {
-                                    // Create a new dependent header for the new row
                                     const newDependentIndex = dependentEntries.length + 1;
-                                    
+
                                     const newDependentHeader = document.createElement('div');
                                     newDependentHeader.classList.add('dependent-header');
                                     newDependentHeader.innerHTML = `
                                       <h5>Dependent ${newDependentIndex}: Please provide details</h5>
                                       <hr>
                                     `;
-                                    
-                                    // Create a new dependent row by cloning the first row
+
                                     const newDependentRow = dependentEntries[0].cloneNode(true);
-                                    
-                                    // Clear the input fields in the new row
+
+                                    // Clear input fields
                                     const inputs = newDependentRow.querySelectorAll('input');
                                     inputs.forEach(input => {
-                                      input.value = ''; 
+                                      input.value = '';
                                       if (input.type === 'checkbox') {
                                         input.checked = false;
                                       }
                                     });
 
-                                    // Update the ID and name attributes for the new dependent (to maintain uniqueness)
+                                    // Update IDs and names
                                     const labels = newDependentRow.querySelectorAll('label');
                                     labels.forEach(label => {
                                       const labelFor = label.getAttribute('for');
@@ -791,43 +1017,90 @@
                                       }
                                     });
 
-                                    // Insert the new dependent header and row into the wrapper
+                                    // Add Remove Button
+                                    const removeButton = document.createElement('button');
+                                    removeButton.type = 'button';
+                                    removeButton.classList.add('btn', 'btn-danger', 'btn-sm', 'remove-dependent-btn');
+                                    removeButton.textContent = 'Remove Dependent';
+                                    newDependentRow.appendChild(removeButton);
+
                                     dependentWrapper.appendChild(newDependentHeader);
                                     dependentWrapper.appendChild(newDependentRow);
                                   } else {
                                     alert('You can only add up to 4 dependents.');
                                   }
                                 });
-                              </script>
 
-                              <style>
-                                .dependent-header {
-                                  margin-bottom: 15px;
-                                }
-                                .dependent-header h5 {
-                                  margin: 0;
-                                }
-                                .dependent-header hr {
-                                  margin: 5px 0;
-                                }
-                              </style>
-                              <!-- Admission and Discharge Dates -->
-                              <div class="mb-3">
-                                <label>Admission Date</label>
-                                <input type="date" class="form-control" name="admission_date">
-                              </div>
+                                // Remove Dependent Row
+                                document.addEventListener('click', function (event) {
+                                  if (event.target.classList.contains('remove-dependent-btn')) {
+                                    const dependentEntry = event.target.closest('.dependent-entry');
+                                    const dependentHeader = dependentEntry.previousElementSibling;
 
-                              <div class="mb-3">
-                                <label>Discharge Date</label>
-                                <input type="date" class="form-control" name="discharge_date">
-                              </div>
-                                            </form>
+                                    if (dependentHeader && dependentHeader.classList.contains('dependent-header')) {
+                                      dependentHeader.remove();
+                                    }
+                                    dependentEntry.remove();
+                                  }
+                                });
 
+                                document.getElementById('same_as_above').addEventListener('change', function() {
+                                  const mailingAddressField = document.getElementById('mailing_address');
+                                  if (this.checked) {
+                                    mailingAddressField.disabled = true;
+                                    mailingAddressField.value = ''; // Clear the content
+                                  } else {
+                                    mailingAddressField.disabled = false;
+                                  }
+                                });
 
-                                </div>
-                                <div class="modal-footer">
-                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                  <button type="submit" form="addUserForm" class="btn btn-primary">Submit</button>
+                                document.getElementById('member_no_middle_name').addEventListener('change', function() {
+                                  const mailingAddressField = document.getElementById('member_middle_name');
+                                  if (this.checked) {
+                                    mailingAddressField.disabled = true;
+                                    mailingAddressField.value = ''; // Clear the content
+                                  } else {
+                                    mailingAddressField.disabled = false;
+                                  }
+                                });
+
+                                document.getElementById('mother_no_middle_name').addEventListener('change', function() {
+                                  const mailingAddressField = document.getElementById('mother_middle_name');
+                                  if (this.checked) {
+                                    mailingAddressField.disabled = true;
+                                    mailingAddressField.value = ''; // Clear the content
+                                  } else {
+                                    mailingAddressField.disabled = false;
+                                  }
+                                });
+
+                                document.getElementById('spouse_no_middle_name').addEventListener('change', function() {
+                                  const mailingAddressField = document.getElementById('spouse_middle_name');
+                                  if (this.checked) {
+                                    mailingAddressField.disabled = true;
+                                    mailingAddressField.value = ''; // Clear the content
+                                  } else {
+                                    mailingAddressField.disabled = false;
+                                  }
+                                });
+
+                                document.getElementById('dependent_no_middle_name_0').addEventListener('change', function() {
+                                  const mailingAddressField = document.getElementById('dependent_middle_name_0');
+                                  if (this.checked) {
+                                    mailingAddressField.disabled = true;
+                                    mailingAddressField.value = ''; // Clear the content
+                                  } else {
+                                    mailingAddressField.disabled = false;
+                                  }
+                                });
+
+                              })();
+                            </script>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="reset" form="addPatientForm" class="btn btn-danger">Reset</button>
+                            <button type="submit" form="addPatientForm" class="btn btn-primary">Submit</button>
+                          </div>
                                 </div>
                               </div>
                             </div>
@@ -838,8 +1111,7 @@
                               document.getElementById(fieldId).disabled = checkbox.checked;
                             }
                           </script>
-
-                </div>
+                    </div>
                 <!-- end card -->
               </div>
               <!-- end col -->

@@ -395,7 +395,7 @@
                             <td>
                                 <div class="action">
                                     <!-- Password Reset Button -->
-                                    <form action="{{ route('admin.user-management.reset-password', $user->id) }}" method="POST">
+                                    <form action="{{ route('admin.user-management.reset-password', $user->id) }}" class="needs-validation" method="POST">
                                         @csrf
                                         <button type="submit" class="text-secondary" title="Reset Password" onclick="return confirm('Are you sure you want to reset the password?')">
                                             <i class="lni lni-key"></i>

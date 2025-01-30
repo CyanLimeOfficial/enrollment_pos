@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\AdminUserManagementController;
 use App\Models\User;
 use App\Models\create_user;
 
+// Redirect root URL to /index
+Route::redirect('/', '/index');
 
 // Show the login form (default route for login page)
 Route::get('/index', function () {
@@ -42,6 +44,8 @@ Route::get('/admin', function () {
 Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::get('patients', [AdminPatientController::class, 'redirectToPatients'])->name('admin.patient_admin');
 });
+// Creating Patients and its Dependent
+Route::post('/admin/patients/store', [AdminPatientController::class, 'store'])->name('patients.store');
 
 // --------------- Archive ------------------
 
