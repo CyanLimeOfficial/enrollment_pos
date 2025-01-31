@@ -62,7 +62,7 @@ class CreatePosPatientsTable extends Migration
             $table->dateTime('discharge_date')->nullable(); // Optional
 
             // Newly added fields
-            $table->text('reason_or_purpose')->nullable(); // Optional
+            $table->text('reason_or_purpose'); // Optional
             $table->text('status'); // Required
             $table->text('attachment_type_1'); // Required
             $table->binary('attachment_1')->nullable(false); // Required

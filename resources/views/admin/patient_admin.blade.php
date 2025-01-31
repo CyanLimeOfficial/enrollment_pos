@@ -382,34 +382,207 @@
                         <th>Action</th>
                         <th style="min-width: 100px;">Health Record ID</th>
                         <th style="min-width: 200px;">Status</th>
-                        <th style="min-width: 200px;">Date of Expiry</th>
-                        <th style="min-width: 250px;">Remaining # of 60days</th>
-                        <th>Admitted</th>
-                        <th>Discharge</th>
-                        <th>Member</th>
-                        <th>Dependent - Patient</th>
+                        <th style="min-width: 130px;">Date of Expiry</th>
+                        <th style="min-width: 50px;">Remaining # of 60days</th>
+                        <th style="min-width: 100px;">Admitted</th>
+                        <th style="min-width: 100px;">Discharge</th>
+                        <th style="min-width: 250px;">Member</th>
+                        <th style="min-width: 250px;">Dependent - Patient</th>
                         <th>Dependent - Birthday</th>
                         <th>PIN</th>
                         <th>Attachment</th>
                         <th>Attachment (Additional)</th>
                         <th>REASON / PURPOSE</th>
-                        <th>Remarks</th>
                       </tr>
                     </thead>
                     <tbody>
+                        @foreach($patients as $patient)
                         <tr>
                             <td>
                                 <div class="action">
-                                    <!-- Password Reset Button -->
-                                    <form action="" method="POST">
-                                        <button type="submit" class="text-secondary" title="View Details" onclick="return confirm('Are you sure you want to reset the password?')">
-                                            <i class="lni lni-eye"></i>
-                                        </button>
-                                    </form>
+                                    <!-- View Details Button for Enrolled POS Patient -->
+                                    <button type="button" class="text-secondary" title="View Details" data-bs-toggle="modal" data-bs-target="#patientModal" data-patient-id="{{ $patient->health_record_id }}">
+                                        <i class="lni lni-eye"></i>
+                                    </button>
+                                    <!-- Patient Details Modal -->
+                                    <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="patientModalLabel">Patient Details</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <!-- Patient details will be dynamically injected here -->
+                                                    <div id="patientDetailsContent"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <script>
+                                      $('#patientModal').on('show.bs.modal', function (event) {
+                                          var button = $(event.relatedTarget); // Button that triggered the modal
+                                          var patientId = button.data('patient-id'); // Extract the patient ID from data-* attributes
+
+                                          // Use AJAX to fetch the patient details from the server
+                                          $.ajax({
+                                              url: '{{ route('admin.view_details', ':patientId') }}'.replace(':patientId', patientId), // Using named route
+                                              method: 'GET',
+                                              success: function(response) {
+                                                  // Populate the modal with patient data
+                                                  var content = `
+                                                      <ul>
+                                                          <div class="card-header text-white" style="
+                                                            background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                                            border-bottom: none;
+                                                            padding: 1.0rem;
+                                                            border-radius: 20px 20px 0 0; /* Curved top edges */
+                                                          ">
+                                                          <div class="d-flex justify-content-between align-items-center">
+                                                              <div>
+                                                                  <!-- Icon and Title -->
+                                                                  <div class="d-flex align-items-center">
+                                                                      <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                                                      </span>
+                                                                      <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff; text-align:center;">
+                                                                          Form Details
+                                                                      </h5>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                      <li><strong>Health Record ID:</strong> ${response.health_record_id || ''}</li>
+                                                      <li><strong>PhilHealth ID:</strong> ${response.philhealth_id || ''}</li>
+                                                      <li><strong>Purpose:</strong> ${response.purpose || ''}</li>
+                                                      <li><strong>Provider Konsulta:</strong> ${response.provider_konsulta || ''}</li>
+                                                      <!-- Admission Details -->
+                                                      <li><strong>Admission Date:</strong> ${response.admission_date ? new Date(response.admission_date).toLocaleDateString('en-US') : ''}</li>
+                                                      <li><strong>Discharge Date:</strong> ${response.discharge_date ? new Date(response.discharge_date).toLocaleDateString('en-US') : ''}</li>
+
+                                                      <!-- Newly Added Fields -->
+                                                      <li><strong>Reason/Purpose:</strong> ${response.reason_or_purpose || ''}</li>
+                                                      <li><strong>Status:</strong> ${response.status || ''}</li>
+                                                      <li><strong>Attachment Type 1:</strong> ${response.attachment_type_1 || ''}</li>
+                                                      <li><strong>Attachment Type 2:</strong> ${response.attachment_type_2 || ''}</li>
+                                                      <div class="card-header text-white" style="
+                                                            background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                                            border-bottom: none;
+                                                            padding: 1.0rem;
+                                                            border-radius: 20px 20px 0 0; /* Curved top edges */
+                                                          ">
+                                                          <div class="d-flex justify-content-between align-items-center">
+                                                              <div>
+                                                                  <!-- Icon and Title -->
+                                                                  <div class="d-flex align-items-center">
+                                                                      <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                                                      </span>
+                                                                      <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff; text-align:center;">
+                                                                          Personal Information
+                                                                      </h5>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                      <!-- Member Information -->
+                                                      <li><strong>Member Name:</strong> ${response.member_first_name} ${response.member_middle_name || ''} ${response.member_last_name} ${response.member_extension_name || ''}</li>
+                                                      <li><strong>Mononym:</strong> ${response.member_mononym ? 'Yes' : ''}</li>
+
+                                                      <!-- Mother's Information -->
+                                                      <li><strong>Mother's Name:</strong> ${response.mother_first_name} ${response.mother_middle_name || ''} ${response.mother_last_name} ${response.mother_extension_name || ''}</li>
+                                                      <li><strong>Mother's Mononym:</strong> ${response.mother_mononym ? 'Yes' : ''}</li>
+
+                                                      <!-- Spouse's Information -->
+                                                      <li><strong>Spouse's Name:</strong> ${response.spouse_first_name} ${response.spouse_middle_name || ''} ${response.spouse_last_name} ${response.spouse_extension_name || ''}</li>
+                                                      <li><strong>Spouse's Mononym:</strong> ${response.spouse_mononym ? 'Yes' : ''}</li>
+
+                                                      <!-- Other Personal Details -->
+                                                      <li><strong>Date of Birth:</strong> ${response.date_of_birth ? new Date(response.date_of_birth).toLocaleDateString('en-US') : ''}</li>
+                                                      <li><strong>Place of Birth:</strong> ${response.place_of_birth || ''}</li>
+                                                      <li><strong>Sex:</strong> ${response.sex || ''}</li>
+                                                      <li><strong>Civil Status:</strong> ${response.civil_status || ''}</li>
+                                                      <li><strong>Citizenship:</strong> ${response.citizenship || ''}</li>
+                                                      <li><strong>PhilSys ID:</strong> ${response.philsys_id || ''}</li>
+                                                      <li><strong>Taxpayer ID:</strong> ${response.tax_payer_id || ''}</li>
+                                                      <div class="card-header text-white" style="
+                                                            background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                                            border-bottom: none;
+                                                            padding: 1.0rem;
+                                                            border-radius: 20px 20px 0 0; /* Curved top edges */
+                                                          ">
+                                                          <div class="d-flex justify-content-between align-items-center">
+                                                              <div>
+                                                                  <!-- Icon and Title -->
+                                                                  <div class="d-flex align-items-center">
+                                                                      <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                                                      </span>
+                                                                      <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff; text-align:center;">
+                                                                          Contact and Address Information 
+                                                                      </h5>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                      <!-- Contact Information -->
+                                                      <li><strong>Address:</strong> ${response.address || ''}</li>
+                                                      <li><strong>Contact Number:</strong> ${response.contact_number || ''}</li>
+                                                      <li><strong>Home Phone Number:</strong> ${response.home_phone_number || ''}</li>
+                                                      <li><strong>Business Direct Line:</strong> ${response.business_direct_line || ''}</li>
+                                                      <li><strong>Email Address:</strong> ${response.email_address || ''}</li>
+                                                      <li><strong>Mailing Address:</strong> ${response.mailing_address || ''}</li>
+                                                      
+                                                      <!-- Dependent Information -->
+                                                      ${response.dependents && response.dependents.length > 0 ? response.dependents.map(dependent => `
+                                                        <div class="card-header text-white" style="
+                                                              background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                                              border-bottom: none;
+                                                              padding: 1.0rem;
+                                                              border-radius: 20px 20px 0 0; /* Curved top edges */
+                                                            ">
+                                                          <div class="d-flex justify-content-between align-items-center">
+                                                              <div>
+                                                                  <!-- Icon and Title -->
+                                                                  <div class="d-flex align-items-center">
+                                                                      <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                                                      </span>
+                                                                      <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color:rgb(255, 255, 255); text-align:center;">
+                                                                          Dependents List
+                                                                      </h5>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                      <ul>
+                                                        <li><strong>Dependent Name:</strong> ${dependent.dependent_first_name} ${dependent.dependent_middle_name || ''} ${dependent.dependent_last_name} ${dependent.dependent_extension_name || ''}</li>
+                                                        <li><strong>Relationship:</strong> ${dependent.dependent_relationship || ''}</li>
+                                                        <li><strong>Date of Birth:</strong> ${dependent.dependent_date_of_birth ? new Date(dependent.dependent_date_of_birth).toLocaleDateString('en-US') : ''}</li>
+                                                        <li><strong>Mononym:</strong> ${dependent.dependent_mononym ? 'Yes' : ''}</li>
+                                                        <li><strong>Permanent Disability:</strong> ${dependent.permanent_disability ? 'Yes' : ''}</li>
+                                                      </ul>
+                                                      `).join('') : '<p>No dependents found.</p>'}
+                                                  </ul>
+                                              `;
+                                              $('#patientDetailsContent').html(content);
+                                          },
+                                          error: function() {
+                                              $('#patientDetailsContent').html('<p>Error fetching patient details. Please try again later.</p>');
+                                          }
+                                        });
+                                      });
+                                    </script>
+
+
+
+
                                     <!-- Delete User -->
-                                    <form action="" method="POST" onsubmit="return confirmDeletion(event);">
-                                        <button type="submit" class="text-danger" title="Delete User">
-                                        <i class="lni lni-trash-can"></i>
+                                    <form action="{{ route('patients.delete', $patient->health_record_id) }}" method="POST" onsubmit="return confirmDeletion(event);">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-danger" title="Delete Patient">
+                                            <i class="lni lni-trash-can"></i>
                                         </button>
                                     </form>
 
@@ -417,27 +590,79 @@
                                         function confirmDeletion(event) {
                                             // Show a prompt asking the user to type CONFIRM
                                             const userInput = prompt("To confirm deletion, please type 'CONFIRM':");
-                                            
-                                            // Check if the user typed CONFIRM
+
+                                            // Check if the user typed CONFIRM (case-sensitive)
                                             if (userInput === "CONFIRM") {
-                                                return true; // Allow the form submission
+                                                return true; // Allow form submission
                                             }
 
                                             // Prevent form submission if the input is incorrect
-                                            alert("Deletion canceled. You must type 'CONFIRM' to delete the user.");
+                                            alert("Deletion canceled. You must type 'CONFIRM' to delete the patient.");
                                             event.preventDefault();
                                             return false;
                                         }
                                     </script>
                                 </div>
                             </td>
-                            <td><a href="#0">443221</a></td>
-                            <td><a href="#0">Juan Dela Cruz</a></td>
-                            <td>332332343232</td>
-                            <td>Brgy. Burabod, Biliran, Biliran</td>
-                            <td>0932373719</td>
+                            <td>{{ $patient->health_record_id }}</td>
+                            <td style="
+                                {{ $patient->status === 'Already Updated' ? 'background: linear-gradient(to right, #006400,rgb(125, 210, 159)); color: white; font-size: 20px;' : 
+                                ($patient->status === 'For Update' ? 'background: linear-gradient(to right, #8B0000,rgb(224, 133, 133)); color: white; font-size: 20px;' : '') }}
+                              ">
+                                {{ $patient->status }}
+                            </td>
+                            <td>{{ optional($patient->discharge_date)->addDays(61)->format('Y-m-d') ?? 'N/A' }}</td>
                             <td>
+                                @php
+                                    $remainingDays = (int) optional($patient->admission_date)->addDays(61)->diffInDays(now(), false);
+                                @endphp
+                                {{ max(0, $remainingDays) }} days
+                            </td>
+                            <td>{{ optional($patient->admission_date)->format('Y-m-d') ?? 'N/A' }}</td>
+                            <td>{{ optional($patient->discharge_date)->format('Y-m-d') ?? 'N/A' }}</td>
+                            <td>
+                                {{ strtoupper($patient->member_last_name) }},
+                                {{ strtoupper($patient->member_first_name) }}
+                                @if($patient->member_middle_name) {{ strtoupper($patient->member_middle_name) }} @endif
+                                @if($patient->member_extension_name) {{ strtoupper($patient->member_extension_name) }} @endif
+                            </td>
+                            <td>
+                                @foreach($patient->dependents as $dependent)
+                                    {{ strtoupper($dependent->dependent_last_name) }},
+                                    {{ strtoupper($dependent->dependent_first_name) }}
+                                    @if($dependent->dependent_middle_name) {{ strtoupper($dependent->dependent_middle_name) }} @endif
+                                    @if($dependent->dependent_extension_name) {{ strtoupper($dependent->dependent_extension_name) }} @endif
+                                    <br>
+                                @endforeach
+                            </td>
+
+                            <td>
+                                @foreach($patient->dependents as $dependent)
+                                    {{ optional($dependent->dependent_date_of_birth)->format('Y-m-d') }} <br>
+                                @endforeach
+                            </td>
+                            <td>{{ $patient->pin }}</td>
+                            <td>
+                                @if($patient->attachment_1)
+                                    <a href="{{ route('patients.download', ['id' => $patient->health_record_id, 'attachment' => 1]) }}">
+                                        {{ $patient->attachment_type_1 }}
+                                    </a>
+                                @else
+                                    No Attachment
+                                @endif
+                            </td>
+                            <td>
+                                @if($patient->attachment_2)
+                                    <a href="{{ route('patients.download', ['id' => $patient->health_record_id, 'attachment' => 2]) }}">
+                                        {{ $patient->attachment_type_2 }}
+                                    </a>
+                                @else
+                                    No Additional Attachment
+                                @endif
+                            </td>
+                            <td>{{ $patient->reason_or_purpose }}</td>
                         </tr>
+                        @endforeach
                     </tbody>
                     </table>
                     <!-- end table -->
@@ -465,6 +690,27 @@
                           <div class="modal-body">
                             <form id="addPatientForm" action="{{ route('patients.store') }}" class="needs-validation" method="POST" enctype="multipart/form-data" novalidate>
                             @csrf
+                              <div class="card-header text-white" style="
+                                    background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                    border-bottom: none;
+                                    padding: 1.0rem;
+                                    border-radius: 20px 20px 0 0; /* Curved top edges */
+                                    ">
+                                  <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                      <!-- Icon and Title -->
+                                      <div class="d-flex align-items-center">
+                                        <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                        </span>
+                                        <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff; text-align:center;">
+                                          Form Details
+                                        </h5>
+                                      </div>
+                                      <!-- Subtle Description -->
+                                    </div>
+                                  </div>
+                              </div>
                               <!-- PhilHealth Identification Number -->
                               <div class="mb-3">
                                 <label for="philhealth_id">PhilHealth Identification Number (PIN) <span style="color: red;">*</span></label>
@@ -474,24 +720,45 @@
 
                               <!-- Purpose -->
                               <div class="mb-3">
-                                <label>Purpose <span style="color: red;">*</span></label>
-                                <div>
-                                  <input type="radio" id="registration" name="purpose" value="Registration" required>
-                                  <label for="registration">Registration</label>
-                                  <input type="radio" id="updating" name="purpose" value="Updating/Amendment" required>
-                                  <label for="updating">Updating/Amendment</label>
-                                </div>
-                                <div class="invalid-feedback">Please select a purpose.</div>
+                                <label for="purpose">Purpose <span style="color: red;">*</span></label>
+                                <select id="purpose" name="purpose" class="form-control" required>
+                                  <option value="" disabled selected>Please select</option>
+                                  <option value="Registration">Registration</option>
+                                  <option value="Updating/Amendment">Updating/Amendment</option>
+                                </select>
+                                <div class="invalid-feedback">This is requirede.</div>
                               </div>
+                              
 
                               <!-- Preferred KonSulta Provider -->
                               <div class="mb-3">
                                 <label for="provider">Preferred KonSulta Provider</label>
                                 <input type="text" class="form-control" id="provider" name="provider">
                               </div>
-
-                              <!-- Personal Details -->
-                              <h4 class="mt-4">Personal Details</h4>
+                                <div class="card-header text-white" style="
+                                    background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                    border-bottom: none;
+                                    padding: 1.0rem;
+                                    border-radius: 20px 20px 0 0; /* Curved top edges */
+                                    ">
+                                  <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                      <!-- Icon and Title -->
+                                      <div class="d-flex align-items-center">
+                                        <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                          <i class="fas fa-id-card"></i> <!-- Font Awesome icon for personal details -->
+                                        </span>
+                                        <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff;">
+                                          Personal Details
+                                        </h5>
+                                      </div>
+                                      <!-- Subtle Description -->
+                                      <p class="mb-0 mt-2" style="font-size: 0.9rem; color: #ffffff; opacity: 0.9;">
+                                        Provide your personal information, including full name and date of birth.
+                                      </p>
+                                    </div>
+                                  </div>
+                              </div>
 
                               <!-- Member Name -->
                               <div class="mb-3">
@@ -528,14 +795,14 @@
                                 <label>Mother's Maiden Name</label>
                                 <div class="row">
                                   <div class="col-md-3">
-                                    <input type="text" class="form-control" name="mother_first_name" placeholder="First Name" required>
+                                    <input type="text" class="form-control" name="mother_first_name" placeholder="First Name">
                                     <div class="invalid-feedback">Please enter your mother's first name.</div>
                                   </div>
                                   <div class="col-md-3">
                                     <input type="text" class="form-control" id="mother_middle_name" name="mother_middle_name" placeholder="Middle Name">
                                   </div>
                                   <div class="col-md-3">
-                                    <input type="text" class="form-control" name="mother_last_name" placeholder="Last Name" required>
+                                    <input type="text" class="form-control" name="mother_last_name" placeholder="Last Name">
                                     <div class="invalid-feedback">Please enter your mother's last name.</div>
                                   </div>
                                   <div class="col-md-3">
@@ -596,17 +863,16 @@
                                 <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" required>
                                 <div class="invalid-feedback">Please enter the place of birth.</div>
                               </div>
-
+                              
                               <!-- Sex -->
                               <div class="mb-3">
-                                <label>Sex <span style="color: red;">*</span></label>
-                                <div>
-                                  <input type="radio" id="male" name="sex" value="Male" required>
-                                  <label for="male">Male</label>
-                                  <input type="radio" id="female" name="sex" value="Female" required>
-                                  <label for="female">Female</label>
-                                </div>
-                                <div class="invalid-feedback">Please select your sex.</div>
+                                <label for="sex">Sex <span style="color: red;">*</span></label>
+                                <select id="sex" name="sex" class="form-control" required>
+                                  <option value="" disabled selected>Please select</option>
+                                  <option value="Male">Male</option>
+                                  <option value="Female">Female</option>
+                                </select>
+                                <div class="invalid-feedback">This is required.</div>
                               </div>
 
                               <!-- Civil Status -->
@@ -644,6 +910,31 @@
                                 <label for="taxpayer_id">Tax Payer Identification Number (Optional)</label>
                                 <input type="text" class="form-control" id="taxpayer_id" name="taxpayer_id">
                               </div>
+
+                              <div class="card-header text-white" style="
+                                    background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                    border-bottom: none;
+                                    padding: 1.0rem;
+                                    border-radius: 20px 20px 0 0; /* Curved top edges */
+                                    ">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                      <div>
+                                        <!-- Icon and Title -->
+                                        <div class="d-flex align-items-center">
+                                          <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                            <i class="fas fa-users"></i> <!-- Font Awesome icon for dependents -->
+                                          </span>
+                                          <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff;">
+                                              Address and Contact Information
+                                          </h5>
+                                        </div>
+                                        <!-- Subtle Description -->
+                                        <p class="mb-0 mt-2" style="font-size: 0.9rem; color: #ffffff; opacity: 0.9;">
+                                          Provide accurate address and contact details for communication.
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
 
                               <!-- Address and Contact Details -->
                               <div class="mb-3">
@@ -686,7 +977,34 @@
 
                               <!-- Declaration of Dependents Section -->
                               <div class="mb-3">
-                                <label for="dependents">Declaration of Dependents</label>
+                                  <div class="card-header text-white" style="
+                                    background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                    border-bottom: none;
+                                    padding: 1.0rem;
+                                    border-radius: 20px 20px 0 0; /* Curved top edges */
+                                    ">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                      <div>
+                                        <!-- Icon and Title -->
+                                        <div class="d-flex align-items-center">
+                                          <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                            <i class="fas fa-users"></i> <!-- Font Awesome icon for dependents -->
+                                          </span>
+                                          <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff;">
+                                            Declaration of Dependents
+                                          </h5>
+                                        </div>
+                                        <!-- Subtle Description -->
+                                        <p class="mb-0 mt-2" style="font-size: 0.9rem; color: #ffffff; opacity: 0.9;">
+                                          Add the details of your dependents here. You can add up to 4 dependents.
+                                        </p>
+                                      </div>
+                                      <!-- Add Dependent Button -->
+                                      <button type="button" class="btn btn-outline-success btn-sm" id="addDependentBtn"  style="font-weight: 500; background-color: green; color: #ffffff; ">
+                                        <i class="fas fa-plus me-1"></i> Add Dependent
+                                      </button>
+                                    </div>
+                                  </div>
                                 <div class="dependent-header">
                                   <h5>Dependent 1: Please provide details</h5>
                                   <hr>
@@ -697,8 +1015,8 @@
                                   <div class="dependent-entry mb-3">
                                     <div class="row">
                                       <div class="col-md-3">
-                                        <label for="dependent_first_name_0">First Name</label>
-                                        <input type="text" class="form-control" id="dependent_first_name_0" name="dependent_first_name[]" required>
+                                        <label for="dependent_first_name_0">First Name <span style="color: red;">*</span></label>
+                                        <input type="text" class="form-control" id="dependent_first_name_0" name="dependent_first_name[]">
                                         <div class="invalid-feedback">Please enter the dependent's first name.</div>
                                       </div>
                                       <div class="col-md-3">
@@ -706,8 +1024,8 @@
                                         <input type="text" class="form-control" id="dependent_middle_name_0" name="dependent_middle_name[]">
                                       </div>
                                       <div class="col-md-3">
-                                        <label for="dependent_last_name_0">Last Name</label>
-                                        <input type="text" class="form-control" id="dependent_last_name_0" name="dependent_last_name[]" required>
+                                        <label for="dependent_last_name_0">Last Name <span style="color: red;">*</span></label>
+                                        <input type="text" class="form-control" id="dependent_last_name_0" name="dependent_last_name[]">
                                         <div class="invalid-feedback">Please enter the dependent's last name.</div>
                                       </div>
                                       <div class="col-md-3">
@@ -718,8 +1036,8 @@
 
                                     <div class="row">
                                       <div class="mb-3">
-                                        <label for="dependent_citizenship_0">Citizenship</label>
-                                        <select id="dependent_citizenship_0" name="dependent_citizenship[]" class="form-control" required>
+                                        <label for="dependent_citizenship_0">Citizenship <span style="color: red;">*</span></label>
+                                        <select id="dependent_citizenship_0" name="dependent_citizenship[]" class="form-control">
                                           <option value="Filipino">Filipino</option>
                                           <option value="Foreign National">Foreign National</option>
                                           <option value="Dual Citizen">Dual Citizen</option>
@@ -727,13 +1045,13 @@
                                         <div class="invalid-feedback">Please select your citizenship.</div>
                                       </div>
                                       <div class="col-md-3">
-                                        <label for="dependent_relationship_0">Relationship</label>
-                                        <input type="text" class="form-control" id="dependent_relationship_0" name="dependent_relationship[]" required>
+                                        <label for="dependent_relationship_0">Relationship <span style="color: red;">*</span></label>
+                                        <input type="text" class="form-control" id="dependent_relationship_0" name="dependent_relationship[]">
                                         <div class="invalid-feedback">Please enter the dependent's relationship.</div>
                                       </div>
                                       <div class="col-md-3">
-                                        <label for="dependent_dob_0">Date of Birth</label>
-                                        <input type="date" class="form-control" id="dependent_dob_0" name="dependent_dob[]" required>
+                                        <label for="dependent_dob_0">Date of Birth <span style="color: red;">*</span></label>
+                                        <input type="date" class="form-control" id="dependent_dob_0" name="dependent_dob[]">
                                         <div class="invalid-feedback">Please enter the dependent's date of birth.</div>
                                       </div>
                                     </div>
@@ -765,17 +1083,40 @@
                                     </div>
                                   </div>
                                 </div>
-                                <!-- Button to Add Dependent Row -->
-                                <button type="button" class="btn btn-primary" id="addDependentBtn">Add Dependent</button>
+                              </div>
+                              <div class="card-header text-white" style="
+                                    background: linear-gradient(135deg,rgb(7, 118, 33),rgb(181, 202, 179));
+                                    border-bottom: none;
+                                    padding: 1.0rem;
+                                    border-radius: 20px 20px 0 0; /* Curved top edges */
+                                    ">
+                                  <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                      <!-- Icon and Title -->
+                                      <div class="d-flex align-items-center">
+                                        <span class="me-3" style="font-size: 1.75rem; color: #ffffff;">
+                                          <i class="fas fa-notes-medical"></i> <!-- Font Awesome icon for medical notes -->
+                                        </span>
+                                        <h5 class="mb-0" style="font-size: 1.5rem; font-weight: 600; color: #ffffff;">
+                                          Additional Patient Information
+                                        </h5>
+                                      </div>
+                                      <!-- Subtle Description -->
+                                      <p class="mb-0 mt-2" style="font-size: 0.9rem; color: #ffffff; opacity: 0.9;">
+                                        Provide additional medical details relevant to patient care.
+                                      </p>
+                                    </div>
+                                  </div>
                               </div>
 
                               <!-- Admission and Discharge Dates -->
-                              <div class="mb-3">
+                              <div class="mb-3" style="max-width: 200px;">
                                 <label>Admission Date <span style="color: red;">*</span></label>
                                 <input type="date" class="form-control" name="admission_date" required>
                                 <div class="invalid-feedback">Please enter the admission date.</div>
                               </div>
-                              <div class="mb-3">
+
+                              <div class="mb-3" style="max-width: 200px;">
                                 <label>Discharge Date <span style="color: red;">*</span></label>
                                 <input type="date" class="form-control" name="discharge_date" required>
                                 <div class="invalid-feedback">Please enter the discharge date.</div>
@@ -928,8 +1269,6 @@
                                   </select>
                                   <div class="invalid-feedback">Please select a status.</div>
                                 </div>
-                                <!-- Submit Button -->
-                                <button type="submit" class="btn btn-primary">Submit</button>
                             </form>
 
                             <script>

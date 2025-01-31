@@ -47,6 +47,14 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 // Creating Patients and its Dependent
 Route::post('/admin/patients/store', [AdminPatientController::class, 'store'])->name('patients.store');
 
+    // Download Attachment
+    Route::get('/patients/download/{id}/{attachment}', [AdminPatientController::class, 'download'])->name('patients.download');
+
+    // ============== ACTION BUTTONS =================
+    Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'delete'])->name('patients.delete');
+    Route::get('admin/patients/get-patient-details/{id}', [AdminPatientController::class, 'getPatientDetails'])
+    ->name('admin.view_details');
+
 // --------------- Archive ------------------
 
 // Redirect to Archive/Patient List
@@ -73,6 +81,7 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
     // Password Reset
     Route::post('/admin/user-management/reset-password/{id}', [AdminUserManagementController::class, 'resetPassword'])
         ->name('admin.user-management.reset-password');
+        
 
     // ============= ADD USER ====================
     // Handles Add User to store to database  
