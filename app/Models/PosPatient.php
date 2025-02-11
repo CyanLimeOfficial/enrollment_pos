@@ -9,10 +9,13 @@ class PosPatient extends Model
 {
     use HasFactory;
 
+    // Define the table associated with the model
     protected $table = 'pos_patients';
 
+    // Define the primary key
     protected $primaryKey = 'health_record_id';
 
+    // Define the fields that are mass assignable
     protected $fillable = [
         'philhealth_id',
         'purpose',
@@ -51,16 +54,19 @@ class PosPatient extends Model
         'status',
         'attachment_type_1',
         'attachment_1',
-        'attachment_type_2',
-        'attachment_2',
     ];
 
+    // Define the fields that should be cast to native types
     protected $casts = [
         'date_of_birth' => 'datetime',
         'admission_date' => 'datetime',
         'discharge_date' => 'datetime',
+        'member_mononym' => 'boolean',
+        'mother_mononym' => 'boolean',
+        'spouse_mononym' => 'boolean',
     ];
 
+    // Define the relationship with the dependents
     public function dependents()
     {
         return $this->hasMany(PosPatientDependant::class, 'health_record_id_relation_2', 'health_record_id');

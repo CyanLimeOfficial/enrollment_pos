@@ -1,3 +1,3 @@
-$(document).ready( function () {
-    $('#example').DataTable();
-} );
+	
+new DataTable('#example2');
+new DataTable('#example');

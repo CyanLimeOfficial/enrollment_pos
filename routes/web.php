@@ -3,8 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\Admin\AdminPatientController; 
@@ -34,9 +35,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // This is web routes for ADMIN
 
 // After successful login, redirect to a user-specific page (or a default dashboard)
-Route::get('/admin', function () {
-    return view('admin.admin'); 
-})->name('home.admin')->middleware('auth'); 
+Route::get('/admin', [AdminDashboardController::class, 'redirectToDashboard'])->middleware('auth');
 
 // --------------- Patient ------------------
 
@@ -44,16 +43,43 @@ Route::get('/admin', function () {
 Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::get('patients', [AdminPatientController::class, 'redirectToPatients'])->name('admin.patient_admin');
 });
-// Creating Patients and its Dependent
-Route::post('/admin/patients/store', [AdminPatientController::class, 'store'])->name('patients.store');
+    // Preview the Transmittal ID to the preview modal
+    Route::get('/get-latest-transmittal', function () {
+        $latestTransmittal = DB::table('transmittals')
+            ->select('transmittal_id')
+            ->where('transmittal_id', 'LIKE', '000-%') // Ensure correct format
+            ->orderByRaw("CAST(SUBSTRING(transmittal_id, 5, 5) AS UNSIGNED) DESC")
+            ->first();
+    
+        // Extract numeric part and increment
+        if ($latestTransmittal && preg_match('/000-(\d+)/', $latestTransmittal->transmittal_id, $matches)) {
+            $numericPart = intval($matches[1]) + 1;
+        } else {
+            $numericPart = 1;
+        }
+    
+        // Format the new transmittal ID as "000-00001"
+        $newTransmittalId = sprintf('000-%05d', $numericPart);
+    
+        return response()->json(['transmittal_id' => $newTransmittalId]);
+    });
+    // Creating Patients and its Dependent
+    Route::post('/admin/patients/store', [AdminPatientController::class, 'store'])->name('patients.store');
 
     // Download Attachment
     Route::get('/patients/download/{id}/{attachment}', [AdminPatientController::class, 'download'])->name('patients.download');
+    
+    // Generate Transmittal Form
+    Route::post('/admin/patients/transmittal-form', [AdminPatientController::class, 'exportTransmittal'])
+    ->name('patients.store.transmittal');
+
 
     // ============== ACTION BUTTONS =================
     Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'delete'])->name('patients.delete');
     Route::get('admin/patients/get-patient-details/{id}', [AdminPatientController::class, 'getPatientDetails'])
     ->name('admin.view_details');
+    Route::post('admin/update_patient/{id}', [PatientController::class, 'updatePatientDetails'])
+    ->name('admin.update_details');
 
 // --------------- Archive ------------------
 
@@ -66,6 +92,8 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::get('archive-transmittal', [AdminTransmittalController::class, 'redirectToTransmittal'])->name('admin.archive.transmittal_archive_admin');
 });
+// Route for downloading a transmittal attachment
+Route::get('/transmittals/{id}/download', [AdminTransmittalController::class, 'download'])->name('transmittals.download');
 
 // --------------- User Management ------------------
 

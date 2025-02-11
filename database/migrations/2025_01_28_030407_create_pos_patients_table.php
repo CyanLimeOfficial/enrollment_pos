@@ -58,16 +58,14 @@ class CreatePosPatientsTable extends Migration
             $table->string('mailing_address')->nullable(); // Optional
 
             // Admission details
-            $table->dateTime('admission_date'); // Required
+            $table->dateTime('admission_date')->nullable(); // Required
             $table->dateTime('discharge_date')->nullable(); // Optional
 
             // Newly added fields
-            $table->text('reason_or_purpose'); // Optional
-            $table->text('status'); // Required
-            $table->text('attachment_type_1'); // Required
-            $table->binary('attachment_1')->nullable(false); // Required
-            $table->text('attachment_type_2')->nullable(); // Optional
-            $table->binary('attachment_2')->nullable(); // Optional
+            $table->text('reason_or_purpose')->nullable(); // Optional
+            $table->text('status')->nullable(); // Required
+            $table->text('attachment_type_1')->nullable(); // Required
+            $table->binary('attachment_1')->nullable(); // Required
 
             // Timestamps
             $table->timestamps();

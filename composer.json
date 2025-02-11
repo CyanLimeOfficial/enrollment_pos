@@ -13,7 +13,8 @@
         "laravel/framework": "^11.31",
         "laravel/jetstream": "^5.3",
         "laravel/tinker": "^2.9",
-        "livewire/livewire": "^3.0"
+        "livewire/livewire": "^3.0",
+        "maatwebsite/excel": "3.1.*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -71,6 +72,15 @@
             "php-http/discovery": true
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/maatwebsite/excel",
+            "canonical": false
+        }
+    ],
     "minimum-stability": "stable",
     "prefer-stable": true
+
+    
 }

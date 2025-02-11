@@ -33,7 +33,7 @@
               <div class="auth-cover-wrapper bg-primary-100">
                 <div class="auth-cover">
                   <div class="title text-center">
-                    <h1 class="text-primary mb-10">Claims Monitoring System</h1>
+                    <h1 class="text-primary mb-10">POS Transmittal Enrollment</h1>
                     <p class="text-medium">
                       Biliran Provincial Hospital
                     </p>

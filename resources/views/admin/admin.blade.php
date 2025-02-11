@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="shortcut icon" href="assets/custom_assets/Picture/sign-in-pic.png" type="image/x-icon" />
-    <title>Home | CMS</title>
+    <title>Home | POS</title>
 
     <!-- ========== All CSS files linkup ========= -->
     <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}" />
@@ -27,7 +27,7 @@
       <div class="navbar-logo">
         <a href="index.html">
           <img src="assets/custom_assets/Picture/sign-in-pic.png" alt="logo" height="50px"/>
-          <span class="text"><h2>CMS</h2></span>
+          <span class="text"><h2 style="color: #F5F8FC">POS</h2></span>
         </a>
       </div>
       <nav class="sidebar-nav">
@@ -354,11 +354,10 @@
                   <i class="lni lni-cart-full"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Daily Registered Claim</h6>
-                  <h3 class="text-bold mb-10">34567</h3>
+                  <h6 class="mb-10">Daily Registered Member</h6>
+                  <h3 class="text-bold mb-10">{{ $memberToday }}</h3>
                   <p class="text-sm text-success">
-                    <i class="lni lni-arrow-up"></i> +2.00%
-                    <span class="text-gray">(Today)</span>
+                    <span class="text-gray">Today</span>
                   </p>
                 </div>
               </div>
@@ -371,11 +370,10 @@
                   <i class="lni lni-dollar"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Total For Update</h6>
-                  <h3 class="text-bold mb-10">$74,567</h3>
+                  <h6 class="mb-10">Daily Registered Dependent</h6>
+                  <h3 class="text-bold mb-10">{{ $dependentToday }}</h3>
                   <p class="text-sm text-success">
-                    <i class="lni lni-arrow-up"></i> +5.45%
-                    <span class="text-gray">Entire Record</span>
+                    <span class="text-gray">Today</span>
                   </p>
                 </div>
               </div>
@@ -388,10 +386,9 @@
                   <i class="lni lni-credit-cards"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Total Already Update</h6>
-                  <h3 class="text-bold mb-10">$24,567</h3>
+                  <h6 class="mb-10">Total For Update</h6>
+                  <h3 class="text-bold mb-10">{{ $ForUpdate }}</h3>
                   <p class="text-sm text-danger">
-                    <i class="lni lni-arrow-down"></i> -2.00%
                     <span class="text-gray">Entire Record</span>
                   </p>
                 </div>
@@ -405,11 +402,10 @@
                   <i class="lni lni-user"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Total Blank Staus</h6>
-                  <h3 class="text-bold mb-10">34567</h3>
+                  <h6 class="mb-10">Total Already Updated</h6>
+                  <h3 class="text-bold mb-10">{{ $AlreadyUpdated }}</h3>
                   <p class="text-sm text-danger">
-                    <i class="lni lni-arrow-down"></i> -25.00%
-                    <span class="text-gray">No status recorded</span>
+                    <span class="text-gray">Entire Record</span>
                   </p>
                 </div>
               </div>

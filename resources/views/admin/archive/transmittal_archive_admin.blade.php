@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="{{ asset('assets/css/materialdesignicons.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}" />
+    <!-- Datatables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.css" rel="stylesheet">
+    <script src="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.js"></script>
 
   </head>
   <body>
@@ -261,7 +265,12 @@
                     <div class="profile-info">
                       <div class="info">
                         <div class="image">
-                          <img src="assets/images/profile/profile-image.png" alt="" />
+                        @if(session('profile_picture'))
+                            <img src="{{ session('profile_picture') }}" alt="Profile Picture" class="img-fluid rounded-circle" style="width: 90px; height: 50px; object-fit: cover;">
+                            @else
+                                <!-- Default Profile Picture if none is stored -->
+                                <img src="{{ asset('assets/images/profile/profile-image.png') }}" alt="Default Profile Picture" class="img-fluid rounded-circle" width="150">
+                            @endif
                         </div>
                         <div>
                         <h6 class="fw-500">
@@ -281,7 +290,7 @@
                       <div class="image">
                             <!-- Check if profile picture is stored in session -->
                             @if(session('profile_picture'))
-                            <img src="{{ session('profile_picture') }}" alt="Profile Picture" class="img-fluid rounded-circle" style="width: 1000px; height: 50px; object-fit: cover;">
+                            <img src="{{ session('profile_picture') }}" alt="Profile Picture" class="img-fluid rounded-circle" style="width: 90px; height: 50px; object-fit: cover;">
                             @else
                                 <!-- Default Profile Picture if none is stored -->
                                 <img src="{{ asset('assets/images/profile/profile-image.png') }}" alt="Default Profile Picture" class="img-fluid rounded-circle" width="150">
@@ -338,283 +347,82 @@
           </div>
           <!-- ========== title-wrapper end ========== -->
           <div class="row">
-            <div class="col-xl-3 col-lg-4 col-sm-6">
-              <div class="icon-card mb-30">
-                <div class="icon purple">
-                  <i class="lni lni-cart-full"></i>
-                </div>
-                <div class="content">
-                  <h6 class="mb-10">Daily Registered Claim</h6>
-                  <h3 class="text-bold mb-10">34567</h3>
-                  <p class="text-sm text-success">
-                    <i class="lni lni-arrow-up"></i> +2.00%
-                    <span class="text-gray">(Today)</span>
-                  </p>
-                </div>
-              </div>
-              <!-- End Icon Cart -->
-            </div>
-            <!-- End Col -->
-            <div class="col-xl-3 col-lg-4 col-sm-6">
-              <div class="icon-card mb-30">
-                <div class="icon success">
-                  <i class="lni lni-dollar"></i>
-                </div>
-                <div class="content">
-                  <h6 class="mb-10">Total For Update</h6>
-                  <h3 class="text-bold mb-10">$74,567</h3>
-                  <p class="text-sm text-success">
-                    <i class="lni lni-arrow-up"></i> +5.45%
-                    <span class="text-gray">Entire Record</span>
-                  </p>
-                </div>
-              </div>
-              <!-- End Icon Cart -->
-            </div>
-            <!-- End Col -->
-            <div class="col-xl-3 col-lg-4 col-sm-6">
-              <div class="icon-card mb-30">
-                <div class="icon primary">
-                  <i class="lni lni-credit-cards"></i>
-                </div>
-                <div class="content">
-                  <h6 class="mb-10">Total Already Update</h6>
-                  <h3 class="text-bold mb-10">$24,567</h3>
-                  <p class="text-sm text-danger">
-                    <i class="lni lni-arrow-down"></i> -2.00%
-                    <span class="text-gray">Entire Record</span>
-                  </p>
-                </div>
-              </div>
-              <!-- End Icon Cart -->
-            </div>
-            <!-- End Col -->
-            <div class="col-xl-3 col-lg-4 col-sm-6">
-              <div class="icon-card mb-30">
-                <div class="icon orange">
-                  <i class="lni lni-user"></i>
-                </div>
-                <div class="content">
-                  <h6 class="mb-10">Total Blank Staus</h6>
-                  <h3 class="text-bold mb-10">34567</h3>
-                  <p class="text-sm text-danger">
-                    <i class="lni lni-arrow-down"></i> -25.00%
-                    <span class="text-gray">No status recorded</span>
-                  </p>
-                </div>
-              </div>
-              <!-- End Icon Cart -->
-            </div>
-            <!-- End Col -->
-          </div>
-          <!-- End Row -->
-          <div class="row">
               <div class="col-lg-12">
                 <div class="card-style mb-30">
-                  <h6 class="mb-10">Data Table</h6>
+                  <h6 class="mb-10">Transmittal Archive</h6>
                   <p class="text-sm mb-20">
-                    For basic styling—light padding and only horizontal
-                    dividers—use the class table.
+                    Generated Transmittals
                   </p>
                   <div class="table-wrapper table-responsive">
-                    <table class="table">
+                  <table id="example" class="table table-striped cell-border table-hover dataTable">
                       <thead>
-                        <tr>
-                          <th class="lead-info">
-                            <h6>Lead</h6>
-                          </th>
-                          <th class="lead-email">
-                            <h6>Email</h6>
-                          </th>
-                          <th class="lead-phone">
-                            <h6>Phone No</h6>
-                          </th>
-                          <th class="lead-company">
-                            <h6>Company</h6>
-                          </th>
-                          <th>
-                            <h6>Action</h6>
-                          </th>
-                        </tr>
-                        <!-- end table row-->
+                          <tr>
+                              <th>
+                                  <h6>Action</h6>
+                              </th>
+                              <th class="">
+                                  <h6>Transmittal ID</h6>
+                              </th>
+                              <th class="lead-email">
+                                  <h6>Attachment</h6>
+                              </th>
+                              <th class="lead-email">
+                                  <h6>Date Prepared</h6>
+                              </th>
+                              <th class="lead-email">
+                                  <h6>Prepared By</h6>
+                              </th>
+                              <th class="lead-phone">
+                                  <h6>Number of Claims</h6>
+                              </th>
+                              <th class="lead-phone">
+                                  <h6>Issued By</h6>
+                              </th>
+                          </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td class="min-width">
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-1.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>Courtney Henry</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="min-width">
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td class="min-width">
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td class="min-width">
-                            <p>UIdeck digital agency</p>
-                          </td>
+                          @foreach($transmittals as $transmittal)
+                          <tr>
                           <td>
                             <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
+                              <button class="more-btn ml-10 dropdown-toggle" id="moreAction1" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                <i class="lni lni-more-alt"></i>
                               </button>
+                              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreAction1">
+                                <li class="dropdown-item">
+                                  <a href="#0" class="text-gray">Edit</a>
+                                </li>
+                                <li class="dropdown-item">
+                                  <a href="#0" class="text-gray">Download</a>
+                                </li>
+                                <li class="dropdown-item">
+                                  <a href="#0" class="text-gray">View</a>
+                                </li>
+                                <li class="dropdown-item">
+                                  <a href="#0" class="text-gray">Delete</a>
+                                </li>
+                              </ul>
                             </div>
                           </td>
-                        </tr>
-                        <!-- end table row -->
-                        <tr>
-                          <td class="min-width">
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-2.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>John Doe</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="min-width">
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td class="min-width">
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td class="min-width">
-                            <p>Graygrids digital agency</p>
-                          </td>
-                          <td>
-                            <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        <!-- end table row -->
-                        <tr>
-                          <td class="min-width">
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-3.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>David Smith</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="min-width">
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td class="min-width">
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td class="min-width">
-                            <p>Abc agency</p>
-                          </td>
-                          <td>
-                            <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        <!-- end table row -->
-                        <tr>
-                          <td class="min-width">
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-4.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>Jonathon</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="min-width">
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td class="min-width">
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td class="min-width">
-                            <p>Creative IT Agency</p>
-                          </td>
-                          <td>
-                            <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        <!-- end table row -->
-                        <tr>
-                          <td>
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-5.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>Anna Lee</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td>
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td>
-                            <p>Halal It agency</p>
-                          </td>
-                          <td>
-                            <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        <!-- end table row -->
-                        <tr>
-                          <td>
-                            <div class="lead">
-                              <div class="lead-image">
-                                <img src="assets/images/lead/lead-6.png" alt="" />
-                              </div>
-                              <div class="lead-text">
-                                <p>Gray Simon</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <p><a href="#0">yourmail@gmail.com</a></p>
-                          </td>
-                          <td>
-                            <p>(303)555 3343523</p>
-                          </td>
-                          <td>
-                            <p>DesignCourse</p>
-                          </td>
-                          <td>
-                            <div class="action">
-                              <button class="text-danger">
-                                <i class="lni lni-trash-can"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        <!-- end table row -->
+                              <td>{{ $transmittal->transmittal_id }}</td>
+                              <td>
+                              @if($transmittal->attachment_transmittal)
+                                  <a href="{{ route('transmittals.download', $transmittal->id) }}" class="btn btn-primary">
+                                      Download Attachment
+                                  </a>
+                              @else
+                                  <span>No Attachment</span>
+                              @endif
+                              </td>
+                              <td>{{ \Carbon\Carbon::parse($transmittal->date_prepared)->format('Y/m/d') }}</td>
+                              <td>{{ $transmittal->prepared_by }}</td>
+                              <td>{{ $transmittal->number_of_claims }} Claims</td>
+                              <td>{{ $transmittal->issued_by_full_name }}</tr>
+                          @endforeach
                       </tbody>
-                    </table>
+                  </table>
+
                     <!-- end table -->
                   </div>
                 </div>
@@ -640,6 +448,7 @@
     <script src="{{ asset('assets/js/world-merc.js') }}"></script>
     <script src="{{ asset('assets/js/polyfill.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/js/datatables.js') }}"></script>
 
     <script>
       // ======== jvectormap activation

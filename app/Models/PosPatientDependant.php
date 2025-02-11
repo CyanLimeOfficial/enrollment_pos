@@ -9,15 +9,11 @@ class PosPatientDependant extends Model
 {
     use HasFactory;
 
-    // Define the table name (if it differs from the default convention)
     protected $table = 'pos_patients_dependants';
-
-    // Define the primary key (if it differs from the default 'id')
     protected $primaryKey = 'dependent_hospital_id';
 
-    // Define fillable fields to allow mass assignment
     protected $fillable = [
-        'health_record_id_relation_2', // Foreign key to PosPatient
+        'health_record_id_relation_2',
         'dependent_first_name',
         'dependent_middle_name',
         'dependent_last_name',
@@ -26,18 +22,22 @@ class PosPatientDependant extends Model
         'dependent_date_of_birth',
         'dependent_mononym',
         'permanent_disability',
+        'attachment_type_2',
+        'attachment_2', // Consider changing to file path
+        'admission_date_2',
+        'status_2',
+        'discharge_date_2',
+        'reason_or_purpose2',
     ];
 
-    // Define casted fields
     protected $casts = [
-        'dependent_date_of_birth' => 'datetime', // Cast to Carbon instance
+        'dependent_date_of_birth' => 'datetime',
+        'admission_date_2' => 'datetime',
+        'discharge_date_2' => 'datetime',
+        'dependent_mononym' => 'boolean',
+        'permanent_disability' => 'boolean',
     ];
 
-    /**
-     * Define the relationship with the PosPatient model.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function patient()
     {
         return $this->belongsTo(PosPatient::class, 'health_record_id_relation_2', 'health_record_id');
