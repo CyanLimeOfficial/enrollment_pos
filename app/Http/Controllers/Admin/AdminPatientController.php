@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\Transmittal;  // Import the Transmittal model
+use Illuminate\Support\Facades\DB;
 
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TransmittalExport;
@@ -128,6 +129,7 @@ class AdminPatientController extends Controller
                 'pos_patients.member_last_name',
                 'pos_patients.member_extension_name',
                 'pos_patients.date_of_birth',
+                'pos_patients_dependants.dependent_hospital_id',
                 'pos_patients_dependants.dependent_first_name',
                 'pos_patients_dependants.dependent_middle_name',
                 'pos_patients_dependants.dependent_last_name',
@@ -210,206 +212,387 @@ class AdminPatientController extends Controller
         return view('admin.patient_admin', compact('patients'));
     }
     
-    public function updatePatientDetails(Request $request, $id)
+    public function updatePatientDetails(Request $request, PosPatient $patient)
     {
-        // Validate patient and dependent fields
-        $validatedData = $request->validate([
-            'philhealth_id'            => 'required|string|max:255',
-            'purpose'                  => 'required|in:Registration,Updating/Amendment',
-            'provider_konsulta'        => 'nullable|string',
-            'member_first_name'        => 'required|string',
-            'member_middle_name'       => 'nullable|string',
-            'member_last_name'         => 'required|string',
-            'member_extension_name'    => 'nullable|string',
-            'member_mononym'           => 'nullable|boolean',
-            'mother_first_name'        => 'nullable|string',
-            'mother_middle_name'       => 'nullable|string',
-            'mother_last_name'         => 'nullable|string',
-            'mother_extension_name'    => 'nullable|string',
-            'mother_mononym'           => 'nullable|boolean',
-            'spouse_first_name'        => 'nullable|string',
-            'spouse_middle_name'       => 'nullable|string',
-            'spouse_last_name'         => 'nullable|string',
-            'spouse_extension_name'    => 'nullable|string',
-            'spouse_mononym'           => 'nullable|boolean',
-            'date_of_birth'            => 'required|date',
-            'place_of_birth'           => 'required|string',
-            'sex'                      => 'required|in:Male,Female',
-            'civil_status'             => 'required|in:Single,Married,Annulled,Widower,Legally Separated',
-            'citizenship'              => 'required|in:Filipino,Foreign National,Dual Citizen',
-            'philsys_id'               => 'nullable|numeric',
-            'tax_payer_id'             => 'nullable|numeric',
-            'address'                  => 'required|string',
-            'contact_number'           => 'nullable|numeric',
-            'home_phone_number'        => 'nullable|string',
-            'business_direct_line'     => 'nullable|numeric',
-            'email_address'            => 'nullable|email',
-            'mailing_address'          => 'nullable|string',
-            'admission_date'           => 'nullable|date',
-            'discharge_date'           => 'nullable|date',
-            'reason_or_purpose'        => 'nullable|string',
-            'status'                   => 'nullable|string',
-            'attachment_type_1'        => 'nullable|string',
+        DB::beginTransaction();
+        Log::info('Starting updatePatientDetails process for patient ID: ' . $patient->id);
     
-            // Dependents (if any)
-            'dependents'                         => 'nullable|array',
-            'dependents.*.dependent_hospital_id'   => 'nullable|integer',
-            'dependents.*.dependent_first_name'    => 'nullable|string',
-            'dependents.*.dependent_middle_name'   => 'nullable|string',
-            'dependents.*.dependent_last_name'     => 'nullable|string',
-            'dependents.*.dependent_extension_name'=> 'nullable|string',
-            'dependents.*.dependent_relationship'  => 'nullable|string',
-            'dependents.*.dependent_date_of_birth' => 'nullable|date',
-            'dependents.*.dependent_mononym'       => 'nullable|boolean',
-            'dependents.*.permanent_disability'    => 'nullable|boolean',
-            'dependents.*.attachment_type_2'       => 'nullable|string',
-            'dependents.*.admission_date_2'        => 'nullable|date',
-            'dependents.*.discharge_date_2'        => 'nullable|date',
-            'dependents.*.status_2'                => 'nullable|string',
-            'dependents.*.reason_or_purpose2'      => 'nullable|string',
+        try {
+            // Log raw request data
+            Log::info('Raw Request Data:', $request->all());
+    
+            // Validate patient data
+            Log::info('Validating patient data...');
+            $validated = $this->validatePatientData($request);
+            Log::info('Patient data validated successfully', $validated);
+    
+            // Update main patient record
+            Log::info('Updating patient record for ID: ' . $patient->id);
+            $this->updatePatientRecord($patient, $validated);
+            Log::info('Patient record updated successfully');
+    
+            // Process dependents
+            Log::info('Processing dependents for patient ID: ' . $patient->id);
+            $this->processDependents($request, $patient);
+            Log::info('Dependents processed successfully');
+    
+            DB::commit();
+            Log::info('Transaction committed successfully for patient ID: ' . $patient->id);
+    
+            // Set a flash message and redirect to admin.patient_admin
+            session()->flash('success', 'Patient details updated successfully');
+            return redirect()->route('admin.patient_admin');
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            Log::error('Validation failed', ['errors' => $e->errors()]);
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Update failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Update failed: ' . $e->getMessage()], 500);
+        }
+    }
+    
+    private function validatePatientData(Request $request)
+    {
+        $validated = $request->validate([
+            // Patient Details
+            'health_record_id'       => 'required|string|max:255',
+            'philhealth_id'          => 'required|string|max:255',
+            'purpose'                => 'required|in:Registration,Updating/Amendment',
+            'provider_konsulta'      => 'nullable|string|max:255',
+            'admission_date'         => 'nullable|date',
+            'discharge_date'         => 'nullable|date',
+            'reason_or_purpose'      => 'nullable|string|max:255',
+            'status'                 => 'nullable|string|max:255',
+            // Note: attachment_type_1 and attachment_type_2 are not processed here.
+        
+            // File upload for patient (max 10MB)
+            'attachment_1'           => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+    
+            // Personal Information
+            'member_first_name'      => 'required|string|max:255',
+            'member_middle_name'     => 'nullable|string|max:255',
+            'member_last_name'       => 'required|string|max:255',
+            'member_extension_name'  => 'nullable|string|max:255',
+            'member_mononym'         => 'nullable|boolean',
+            'mother_first_name'      => 'nullable|string|max:255',
+            'mother_middle_name'     => 'nullable|string|max:255',
+            'mother_last_name'       => 'nullable|string|max:255',
+            'mother_extension_name'  => 'nullable|string|max:255',
+            'mother_mononym'         => 'nullable|boolean',
+            'spouse_first_name'      => 'nullable|string|max:255',
+            'spouse_middle_name'     => 'nullable|string|max:255',
+            'spouse_last_name'       => 'nullable|string|max:255',
+            'spouse_extension_name'  => 'nullable|string|max:255',
+            'spouse_mononym'         => 'nullable|boolean',
+            'date_of_birth'          => 'required|date',
+            'place_of_birth'         => 'required|string|max:255',
+            'sex'                    => 'required|in:Male,Female',
+            'civil_status'           => 'required|in:Single,Married,Annulled,Widower,Legally Separated',
+            'citizenship'            => 'required|in:Filipino,Foreign National,Dual Citizen',
+            'philsys_id'             => 'nullable|string|max:255',
+            'tax_payer_id'           => 'nullable|string|max:255',
+    
+            // Contact and Address Information
+            'address'                => 'required|string|max:255',
+            'contact_number'         => 'nullable|string|max:255',
+            'home_phone_number'      => 'nullable|string|max:255',
+            'business_direct_line'   => 'nullable|string|max:255',
+            'email_address'          => 'nullable|email|max:255',
+            'mailing_address'        => 'nullable|string|max:255',
+    
+            // Dependents
+            'dependents'             => 'nullable|array',
+            'dependents.*.dependent_hospital_id' => 'nullable|integer|exists:pos_patients_dependants,dependent_hospital_id',
+            'dependents.*.dependent_first_name'  => 'nullable|string|max:255',
+            'dependents.*.dependent_middle_name' => 'nullable|string|max:255',
+            'dependents.*.dependent_last_name'   => 'nullable|string|max:255',
+            'dependents.*.dependent_extension_name' => 'nullable|string|max:255',
+            'dependents.*.dependent_relationship'   => 'nullable|string|max:255',
+            'dependents.*.dependent_date_of_birth'  => 'nullable|date',
+            'dependents.*.dependent_mononym'     => 'nullable|boolean',
+            'dependents.*.permanent_disability'  => 'nullable|boolean',
+            // File upload for dependent (max 10MB)
+            'dependents.*.attachment_2'          => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240',
+            'dependents.*.admission_date_2'      => 'nullable|date',
+            'dependents.*.discharge_date_2'      => 'nullable|date',
+            'dependents.*.status_2'              => 'nullable|string|max:255',
+            'dependents.*.reason_or_purpose2'    => 'nullable|string|max:255',
         ]);
     
-        // Find the patient record
-        $patient = PosPatient::findOrFail($id);
-    
-        // Update only changed fields
-        $patient->fill($validatedData);
-        
-        // Save only if there are changes
-        if ($patient->isDirty()) {
-            $patient->save();
-        }
-    
-        // Process dependents (update existing or create new)
-        if ($request->has('dependents') && is_array($request->input('dependents'))) {
-            foreach ($request->input('dependents') as $depData) {
-                if (isset($depData['dependent_hospital_id']) && !empty($depData['dependent_hospital_id'])) {
-                    // Update existing dependent
-                    $dependent = PosPatientsDependant::find($depData['dependent_hospital_id']);
-                    if ($dependent) {
-                        $dependent->fill($depData);
-                        if ($dependent->isDirty()) {
-                            $dependent->save();
-                        }
-                    }
-                } else {
-                    // Create new dependent record
-                    PosPatientsDependant::create(array_merge(['health_record_id_relation_2' => $patient->health_record_id], $depData));
-                }
+        foreach ($validated as $key => $value) {
+            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                Log::error("Encoding issue detected in field: {$key}");
             }
         }
     
-        return response()->json(['message' => 'Patient details updated successfully']);
+        return $validated;
     }
+    
+    private function updatePatientRecord(PosPatient $patient, array $validated)
+    {
+        // Check each field for proper UTF-8 encoding.
+        foreach ($validated as $key => $value) {
+            if (is_string($value) && !mb_check_encoding($value, 'UTF-8')) {
+                Log::error("Database encoding issue in: {$key}");
+            }
+        }
+        
+        // Process file upload for attachment_1 if a new file is provided.
+        if (request()->hasFile("attachment_1")) {
+            $file = request()->file("attachment_1");
+            if ($file->isValid()) {
+                \Log::info("Found valid file for attachment_1:", ['filename' => $file->getClientOriginalName()]);
+                
+                // Read the file's binary content and assign it to attachment_1.
+                $validated['attachment_1'] = file_get_contents($file->getRealPath());
+            } else {
+                \Log::warning("Invalid file for attachment_1.");
+                // If the file is invalid, do not update the attachment.
+                unset($validated['attachment_1']);
+            }
+        } else {
+            \Log::info("No new file uploaded for attachment_1.");
+            // If no file is uploaded, remove the key so the existing value remains unchanged.
+            unset($validated['attachment_1']);
+        }
+        
+        // Fill the patient model with the validated data.
+        $patient->fill($validated);
+        
+        // Save the model only if changes were made.
+        if ($patient->isDirty()) {
+            $patient->save();
+        }
+    }
+    
+    private function processDependents(Request $request, PosPatient $patient)
+    {
+        // Retrieve dependents data; default to an empty array if not provided.
+        $dependentsData = $request->input('dependents', []);
+        
+        // If the member has no dependents, log and exit.
+        if (empty($dependentsData)) {
+            \Log::info("No dependents provided for patient ID: " . $patient->health_record_id);
+            return;
+        }
+    
+        \Log::info("Dependents data from request:", $dependentsData);
+    
+        // Process each dependent
+        foreach ($dependentsData as $index => $dependentData) {
+            // Ensure we have a valid dependent identifier.
+            if (!empty($dependentData['dependent_hospital_id'])) {
+                \Log::info("Processing dependent index {$index} with dependent_hospital_id: " . $dependentData['dependent_hospital_id']);
+                
+                // Find the existing dependent record for this patient.
+                $dependent = PosPatientDependant::where('dependent_hospital_id', $dependentData['dependent_hospital_id'])
+                    ->where('health_record_id_relation_2', $patient->health_record_id)
+                    ->first();
+    
+                if ($dependent) {
+                    \Log::info("Found dependent record:", $dependent->toArray());
+    
+                    // Process file upload for attachment_2 if a new file is provided.
+                    if ($request->hasFile("dependents.{$index}.attachment_2")) {
+                        $depFile = $request->file("dependents.{$index}.attachment_2");
+                        if ($depFile->isValid()) {
+                            \Log::info("Found valid file for dependent index {$index}:", ['filename' => $depFile->getClientOriginalName()]);
+                            
+                            // Read the file's binary content and assign it to attachment_2.
+                            $binaryData = file_get_contents($depFile->getRealPath());
+                            $dependentData['attachment_2'] = $binaryData;
+                        } else {
+                            \Log::warning("Invalid file for dependent index {$index}.");
+                            unset($dependentData['attachment_2']);
+                        }
+                    } else {
+                        \Log::info("No new file uploaded for dependent index {$index}.");
+                        unset($dependentData['attachment_2']);
+                    }
+    
+                    \Log::info("Updating dependent index {$index} with data:", $dependentData);
+                    $dependent->fill($dependentData);
+    
+                    if ($dependent->isDirty()) {
+                        $dependent->save();
+                        \Log::info("Dependent updated successfully.");
+                    } else {
+                        \Log::info("No changes detected for dependent index {$index}.");
+                    }
+                } else {
+                    \Log::warning("Dependent not found for update with dependent_hospital_id: " . $dependentData['dependent_hospital_id']);
+                }
+            } else {
+                \Log::info("Skipping dependent index {$index} with missing dependent_hospital_id.");
+            }
+        }
+    }
+    
+    public function deletePatient(Request $request, $id)
+    {
+        \Log::info("Attempting to delete patient with ID: $id");
+        
+        // Find the patient (member) with dependents loaded.
+        $patient = posPatient::with('dependents')->findOrFail($id);
+        $dependentCount = $patient->dependents->count();
+        \Log::info("Found patient with health_record_id: {$patient->health_record_id} having {$dependentCount} dependent(s).");
+    
+        // If a dependent_id is provided, delete only that specific dependent.
+        if ($request->has('dependent_id')) {
+            $dependentId = $request->dependent_id;
+            \Log::info("Request includes dependent_id: $dependentId. Proceeding with deletion of the specified dependent.");
+            
+            // Query using dependent_hospital_id instead of the model's primary key
+            $dependent = PosPatientDependant::where('dependent_hospital_id', $dependentId)->firstOrFail();
+            \Log::info("Dependent details: " . json_encode($dependent->toArray()));
+            \Log::info("Deleting dependent: " . strtoupper($dependent->dependent_first_name) . " " . strtoupper($dependent->dependent_last_name) . " (ID: $dependentId)");
+            $dependent->delete();
+            \Log::info("Dependent with dependent_hospital_id $dependentId deleted successfully.");
+            return redirect()->back()->with('success', 'Dependent deleted successfully, member retained.');
+        }
+    
+        // If no dependent_id is provided:
+        if ($dependentCount <= 1) {
+            \Log::info("Dependent count is 0 or 1. Proceeding with deletion of the member and all dependents.");
+            if ($dependentCount == 1) {
+                $soleDependent = $patient->dependents->first();
+                \Log::info("Deleting sole dependent: " . json_encode($soleDependent->toArray()));
+            }
+            // Delete all dependents (if any) then the patient record.
+            $patient->dependents()->delete();
+            \Log::info("All dependents deleted for patient with health_record_id: {$patient->health_record_id}.");
+            $patient->delete();
+            \Log::info("Patient with health_record_id: {$patient->health_record_id} deleted successfully.");
+            return redirect()->back()->with('success', 'Member and their dependents (if any) deleted successfully.');
+        } else {
+            \Log::warning("Member with health_record_id: {$patient->health_record_id} has two or more dependents and no dependent_id was specified. Deletion aborted.");
+            return redirect()->back()->with('error', 'Member has two or more dependents. Please specify which dependent to delete.');
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 
     public function getPatientDetails($id)
     {
+        // Log the attempt to fetch a patient by ID
+        \Log::info('Fetching patient details for ID: ' . $id);
+    
         $patient = PosPatient::find($id);
-        
-        if ($patient) {
-            // Fetch the dependents related to the patient (ensure the relationship is defined in the PosPatient model)
-            $dependents = $patient->dependents;
-            $dependentData = [];
     
-            foreach ($dependents as $dependent) {
-                $dependentData[] = [
-                    'dependent_first_name'      => $dependent->dependent_first_name,
-                    'dependent_middle_name'     => $dependent->dependent_middle_name,
-                    'dependent_last_name'       => $dependent->dependent_last_name,
-                    'dependent_extension_name'  => $dependent->dependent_extension_name,
-                    'dependent_relationship'    => $dependent->dependent_relationship,
-                    'dependent_date_of_birth'   => $dependent->dependent_date_of_birth,
-                    'dependent_mononym'         => $dependent->dependent_mononym,
-                    'permanent_disability'      => $dependent->permanent_disability,
-                    // Only include the type (text) field for attachment, not the blob
-                    'attachment_type_2'         => $dependent->attachment_type_2,
-                    'admission_date_2'          => $dependent->admission_date_2,
-                    'discharge_date_2'          => $dependent->discharge_date_2,
-                    'status_2'                  => $dependent->status_2,
-                    'reason_or_purpose2'        => $dependent->reason_or_purpose2,
-                ];
-            }
-    
-            return response()->json([
-                // **Patient Details**
-                'health_record_id'      => $patient->health_record_id,
-                'philhealth_id'         => $patient->philhealth_id,
-                'purpose'               => $patient->purpose,
-                'provider_konsulta'     => $patient->provider_konsulta,
-                
-                // Member Information
-                'member_first_name'     => $patient->member_first_name,
-                'member_middle_name'    => $patient->member_middle_name,
-                'member_last_name'      => $patient->member_last_name,
-                'member_extension_name' => $patient->member_extension_name,
-                'member_mononym'        => $patient->member_mononym,
-                
-                // Mother's Information
-                'mother_first_name'     => $patient->mother_first_name,
-                'mother_middle_name'    => $patient->mother_middle_name,
-                'mother_last_name'      => $patient->mother_last_name,
-                'mother_extension_name' => $patient->mother_extension_name,
-                'mother_mononym'        => $patient->mother_mononym,
-                
-                // Spouse's Information
-                'spouse_first_name'     => $patient->spouse_first_name,
-                'spouse_middle_name'    => $patient->spouse_middle_name,
-                'spouse_last_name'      => $patient->spouse_last_name,
-                'spouse_extension_name' => $patient->spouse_extension_name,
-                'spouse_mononym'        => $patient->spouse_mononym,
-                
-                // Other Personal Details
-                'date_of_birth'         => $patient->date_of_birth,
-                'place_of_birth'        => $patient->place_of_birth,
-                'sex'                   => $patient->sex,
-                'civil_status'          => $patient->civil_status,
-                'citizenship'           => $patient->citizenship,
-                'philsys_id'            => $patient->philsys_id,
-                'tax_payer_id'          => $patient->tax_payer_id,
-                
-                // Contact Information
-                'address'               => $patient->address,
-                'contact_number'        => $patient->contact_number,
-                'home_phone_number'     => $patient->home_phone_number,
-                'business_direct_line'  => $patient->business_direct_line,
-                'email_address'         => $patient->email_address,
-                'mailing_address'       => $patient->mailing_address,
-                
-                // Admission Details
-                'admission_date'        => $patient->admission_date,
-                'discharge_date'        => $patient->discharge_date,
-                
-                // Newly Added Fields (Patient Level)
-                'reason_or_purpose'     => $patient->reason_or_purpose,
-                'status'                => $patient->status,
-                'attachment_type_1'     => $patient->attachment_type_1,
-                
-                // **Dependent Details**
-                'dependents'            => $dependentData,
-            ]);
-        } else {
+        if (!$patient) {
+            \Log::error('Patient not found for ID: ' . $id);
             return response()->json(['error' => 'Patient not found'], 404);
         }
+    
+        \Log::info('Patient found', ['health_record_id' => $patient->health_record_id]);
+    
+        // Ensure the relationship "dependents" is defined in the PosPatient model
+        $dependents = $patient->dependents;
+        \Log::info('Number of dependents found: ' . count($dependents));
+    
+        $dependentData = [];
+        foreach ($dependents as $dependent) {
+            $dependentData[] = [
+                'dependent_hospital_id'     => $dependent->dependent_hospital_id,
+                'dependent_first_name'      => $dependent->dependent_first_name,
+                'dependent_middle_name'     => $dependent->dependent_middle_name,
+                'dependent_last_name'       => $dependent->dependent_last_name,
+                'dependent_extension_name'  => $dependent->dependent_extension_name,
+                'dependent_relationship'    => $dependent->dependent_relationship,
+                'dependent_date_of_birth'   => $dependent->dependent_date_of_birth,
+                'dependent_mononym'         => $dependent->dependent_mononym,
+                'permanent_disability'      => $dependent->permanent_disability,
+                'attachment_type_2'         => $dependent->attachment_type_2,
+                // Generate a data URL for attachment_2 if a blob exists.
+                'attachment_2'          => $dependent->attachment_2 
+                                                    ? 'data:' . $dependent->attachment_type_2 . ';base64,' . base64_encode($dependent->attachment_2)
+                                                    : null,
+                'attachment_type_2'         => $dependent->attachment_type_2,
+                'admission_date_2'          => $dependent->admission_date_2,
+                'discharge_date_2'          => $dependent->discharge_date_2,
+                'status_2'                  => $dependent->status_2,
+                'reason_or_purpose2'        => $dependent->reason_or_purpose2,
+            ];
+        }
+    
+        $responseData = [
+            // **Patient Details**
+            'health_record_id'      => $patient->health_record_id,
+            'philhealth_id'         => $patient->philhealth_id,
+            'purpose'               => $patient->purpose,
+            'provider_konsulta'     => $patient->provider_konsulta,
+            
+            // Member Information
+            'member_first_name'     => $patient->member_first_name,
+            'member_middle_name'    => $patient->member_middle_name,
+            'member_last_name'      => $patient->member_last_name,
+            'member_extension_name' => $patient->member_extension_name,
+            'member_mononym'        => $patient->member_mononym,
+            
+            // Mother's Information
+            'mother_first_name'     => $patient->mother_first_name,
+            'mother_middle_name'    => $patient->mother_middle_name,
+            'mother_last_name'      => $patient->mother_last_name,
+            'mother_extension_name' => $patient->mother_extension_name,
+            'mother_mononym'        => $patient->mother_mononym,
+            
+            // Spouse's Information
+            'spouse_first_name'     => $patient->spouse_first_name,
+            'spouse_middle_name'    => $patient->spouse_middle_name,
+            'spouse_last_name'      => $patient->spouse_last_name,
+            'spouse_extension_name' => $patient->spouse_extension_name,
+            'spouse_mononym'        => $patient->spouse_mononym,
+            
+            // Other Personal Details
+            'date_of_birth'         => $patient->date_of_birth,
+            'place_of_birth'        => $patient->place_of_birth,
+            'sex'                   => $patient->sex,
+            'civil_status'          => $patient->civil_status,
+            'citizenship'           => $patient->citizenship,
+            'philsys_id'            => $patient->philsys_id,
+            'tax_payer_id'          => $patient->tax_payer_id,
+            
+            // Contact Information
+            'address'               => $patient->address,
+            'contact_number'        => $patient->contact_number,
+            'home_phone_number'     => $patient->home_phone_number,
+            'business_direct_line'  => $patient->business_direct_line,
+            'email_address'         => $patient->email_address,
+            'mailing_address'       => $patient->mailing_address,
+            
+            // Admission Details
+            'admission_date'        => $patient->admission_date,
+            'discharge_date'        => $patient->discharge_date,
+            
+            // Newly Added Fields (Patient Level)
+            'reason_or_purpose'     => $patient->reason_or_purpose,
+            'status'                => $patient->status,
+            'attachment_type_1'     => $patient->attachment_type_1,
+                    // New field: Generate a data URL for attachment_1 if it exists
+            'attachment_1'      => $patient->attachment_1 
+                ? 'data:' . $patient->attachment_type_1 . ';base64,' . base64_encode($patient->attachment_1)
+                : null,
+    
+            // **Dependent Details**
+            'dependents'            => $dependentData,
+        ];
+    
+        \Log::info('Returning patient data', $responseData);
+    
+        return response()->json($responseData);
     }
     
-    
-
-    public function delete($id)
-    {
-        // Find the patient by ID
-        $patient = PosPatient::findOrFail($id);
-
-        // Delete all dependents related to this patient
-        PosPatientDependant::where('health_record_id_relation_2', $id)->delete();
-
-        // Delete the patient
-        $patient->delete();
-
-        // Redirect with success message
-        return redirect()->back()->with('success', 'Patient and dependents deleted successfully.');
-    }
 
     
 
@@ -532,24 +715,28 @@ class AdminPatientController extends Controller
                 // Ensure 'dependents' exists and is an array
                 if ($request->has('dependent_first_name') && is_array($request->dependent_first_name)) {
                     foreach ($request->dependent_first_name as $index => $firstName) {
-                        PosPatientDependant::create([
-                            'health_record_id_relation_2' => $patient->health_record_id,
-                            'dependent_first_name' => $firstName,
-                            'dependent_middle_name' => $request->dependent_middle_name[$index] ?? null,
-                            'dependent_last_name' => $request->dependent_last_name[$index] ?? null,
-                            'dependent_extension_name' => $request->dependent_name_extension[$index] ?? null,
-                            'dependent_relationship' => $request->dependent_relationship[$index] ?? null,
-                            'dependent_date_of_birth' => $request->dependent_dob[$index] ?? null,
-                            'dependent_mononym' => isset($request->dependent_mononym[$index]) ? 1 : 0,
-                            'permanent_disability' => isset($request->dependent_permanent_disability[$index]) ? 1 : 0,
-                            'attachment_type_2' => $request->attachment_type_2[$index] ?? null,
-                            'attachment_2' => $request->hasFile("attachment_2.$index") ? file_get_contents($request->file("attachment_2.$index")->getRealPath()) : null,
-                            'admission_date_2' => !empty($request->admission_date_2[$index]) ? $request->admission_date_2[$index] : null,
-                            'discharge_date_2' => !empty($request->discharge_date_2[$index]) ? $request->discharge_date_2[$index] : null,
-                            'status_2' => $request->status_2[$index] ?? null,
-                            'reason_or_purpose2' => $request->reason_or_purpose2[$index] ?? null,
-                        ]);
-                        
+                        // Only create a dependent record if the first name is not empty
+                        if (!empty(trim($firstName))) {
+                            PosPatientDependant::create([
+                                'health_record_id_relation_2' => $patient->health_record_id,
+                                'dependent_first_name'        => $firstName,
+                                'dependent_middle_name'       => $request->dependent_middle_name[$index] ?? null,
+                                'dependent_last_name'         => $request->dependent_last_name[$index] ?? null,
+                                'dependent_extension_name'    => $request->dependent_name_extension[$index] ?? null,
+                                'dependent_relationship'      => $request->dependent_relationship[$index] ?? null,
+                                'dependent_date_of_birth'     => $request->dependent_dob[$index] ?? null,
+                                'dependent_mononym'           => isset($request->dependent_mononym[$index]) ? 1 : 0,
+                                'permanent_disability'        => isset($request->dependent_permanent_disability[$index]) ? 1 : 0,
+                                'attachment_type_2'           => $request->attachment_type_2[$index] ?? null,
+                                'attachment_2'                => $request->hasFile("attachment_2.$index") 
+                                                                   ? file_get_contents($request->file("attachment_2.$index")->getRealPath()) 
+                                                                   : null,
+                                'admission_date_2'            => !empty($request->admission_date_2[$index]) ? $request->admission_date_2[$index] : null,
+                                'discharge_date_2'            => !empty($request->discharge_date_2[$index]) ? $request->discharge_date_2[$index] : null,
+                                'status_2'                    => $request->status_2[$index] ?? null,
+                                'reason_or_purpose2'          => $request->reason_or_purpose2[$index] ?? null,
+                            ]);
+                        }
                     }
                 }
             

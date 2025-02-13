@@ -385,7 +385,7 @@
                               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                           </div>
                       @endif
-                                </div>
+                  </div>
                                 <div class="modal fade" id="previewModal" tabindex="-1">
                                     <div class="modal-dialog modal-xl">
                                         <div class="modal-content">
@@ -762,42 +762,47 @@
                                                               <i class="lni lni-eye"></i>
                                                           </button>
                                                           <!-- Patient Details Modal -->
-<!-- Patient Details Modal (View Only) -->
-<div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="patientModalLabel">Patient Details</h5>
-        <!-- Button to open the Edit modal -->
-        <div class="d-inline-flex align-items-center">
-  <button style="color:black;" type="button" class="btn btn-primary" id="openEditModalBtn" title="Edit Details">
-    <i style="color:black;" class="lni lni-pencil-alt"></i> Edit
-  </button>
-  <button style="color:black;" type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-      </div>
-      <div class="modal-body">
-        <!-- Patient details will be dynamically injected here -->
-        <div id="patientDetailsContent"></div>
-      </div>
-    </div>
-  </div>
-</div>
+                                                          <div class="modal fade" id="patientModal" tabindex="-1" aria-labelledby="patientModalLabel" aria-hidden="true">
+                                                            <div class="modal-dialog modal-lg">
+                                                              <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                  <h5 class="modal-title" id="patientModalLabel">Patient Details</h5>
+                                                                  <!-- Button to open the Edit modal -->
+                                                                  <div class="d-inline-flex align-items-center">
+                                                            <button style="color:black;" type="button" class="btn btn-primary" id="openEditModalBtn" title="Edit Details">
+                                                              <i style="color:black;" class="lni lni-pencil-alt"></i> Edit
+                                                            </button>
+                                                            <button style="color:black;" type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                          </div>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                  <!-- Patient details will be dynamically injected here -->
+                                                                  <div id="patientDetailsContent"></div>
+                                                                </div>
+                                                              </div>
+                                                            </div>
+                                                          </div>
                                                           <script>
                                                             $('#patientModal').on('show.bs.modal', function (event) {
                                                                 var button = $(event.relatedTarget); // Button that triggered the modal
                                                                 var patientId = button.data('patient-id'); // Extract the patient ID
-
+                                                                console.log("Patient ID:", patientId);
+                                                                
+                                                                // Generate the URL by replacing the placeholder with the actual ID
+                                                                var url = '{{ route("admin.view_details", ":patientId") }}'.replace(':patientId', patientId);
+                                                                console.log("AJAX URL:", url);
+                                                                
                                                                 // Use AJAX to fetch the patient details
                                                                 $.ajax({
-                                                                    url: '{{ route('admin.view_details', ':patientId') }}'.replace(':patientId', patientId),
+                                                                    url: url,
                                                                     method: 'GET',
                                                                     success: function(response) {
+                                                                        console.log("AJAX response:", response);
                                                                         var content = `
                                                                             <ul>
                                                                                 <!-- Patient Details -->
                                                                                 <div class="card-header text-white" style="
-                                                                                    background: linear-gradient(135deg, rgb(7, 118, 33), rgb(181, 202, 179));
+                                                                                    background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179));
                                                                                     border-bottom: none;
                                                                                     padding: 1rem;
                                                                                     border-radius: 20px 20px 0 0;
@@ -813,14 +818,22 @@
                                                                                 <li><strong>Admission Date:</strong> ${response.admission_date ? new Date(response.admission_date).toLocaleDateString('en-US') : ''}</li>
                                                                                 <li><strong>Discharge Date:</strong> ${response.discharge_date ? new Date(response.discharge_date).toLocaleDateString('en-US') : ''}</li>
                                                                                 
+                                                                                <!-- Attachment for Patient -->
+                                                                                <li>
+                                                                                  <strong>Attachment Member:</strong>
+                                                                                  ${response.attachment_1 
+                                                                                    ? `<a href="data:application/octet-stream;base64,${btoa(response.attachment_1)}" target="_blank" download="${response.philhealth_id}-${response.attachment_type_1 || 'Attachment'}-Member.png">${response.attachment_type_1 || 'View Attachment'}</a>` 
+                                                                                    : 'No attachment uploaded.'}
+                                                                                </li>
+
+                                                                                
                                                                                 <!-- Newly Added Fields -->
                                                                                 <li><strong>Reason/Purpose:</strong> ${response.reason_or_purpose || ''}</li>
                                                                                 <li><strong>Status:</strong> ${response.status || ''}</li>
-                                                                                <li><strong>Attachment Type 1:</strong> ${response.attachment_type_1 || ''}</li>
                                                                                 
                                                                                 <!-- Personal Information -->
                                                                                 <div class="card-header text-white" style="
-                                                                                    background: linear-gradient(135deg, rgb(7, 118, 33), rgb(181, 202, 179));
+                                                                                    background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179));
                                                                                     border-bottom: none;
                                                                                     padding: 1rem;
                                                                                     border-radius: 20px 20px 0 0;
@@ -829,9 +842,9 @@
                                                                                 </div>
                                                                                 <li><strong>Member Name:</strong> ${response.member_first_name} ${response.member_middle_name || ''} ${response.member_last_name} ${response.member_extension_name || ''}</li>
                                                                                 <li><strong>Member Mononym:</strong> ${response.member_mononym ? 'Yes' : 'No'}</li>
-                                                                                <li><strong>Mother's Name:</strong> ${response.mother_first_name} ${response.mother_middle_name || ''} ${response.mother_last_name} ${response.mother_extension_name || ''}</li>
+                                                                                <li><strong>Mother's Name:</strong> ${response.mother_first_name || ''} ${response.mother_middle_name || ''} ${response.mother_last_name || ''} ${response.mother_extension_name || ''}</li>
                                                                                 <li><strong>Mother's Mononym:</strong> ${response.mother_mononym ? 'Yes' : 'No'}</li>
-                                                                                <li><strong>Spouse's Name:</strong> ${response.spouse_first_name} ${response.spouse_middle_name || ''} ${response.spouse_last_name} ${response.spouse_extension_name || ''}</li>
+                                                                                <li><strong>Spouse's Name:</strong> ${response.spouse_first_name || ''} ${response.spouse_middle_name || ''} ${response.spouse_last_name || ''} ${response.spouse_extension_name || ''}</li>
                                                                                 <li><strong>Spouse's Mononym:</strong> ${response.spouse_mononym ? 'Yes' : 'No'}</li>
                                                                                 <li><strong>Date of Birth:</strong> ${response.date_of_birth ? new Date(response.date_of_birth).toLocaleDateString('en-US') : ''}</li>
                                                                                 <li><strong>Place of Birth:</strong> ${response.place_of_birth || ''}</li>
@@ -843,12 +856,12 @@
                                                                                 
                                                                                 <!-- Contact and Address Information -->
                                                                                 <div class="card-header text-white" style="
-                                                                                    background: linear-gradient(135deg, rgb(7, 118, 33), rgb(181, 202, 179));
+                                                                                    background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179));
                                                                                     border-bottom: none;
                                                                                     padding: 1rem;
                                                                                     border-radius: 20px 20px 0 0;
                                                                                 ">
-                                                                                    <h5 style="font-size: 1.5rem; font-weight: 600; text-align:center;">Contact &amp; Address Information</h5>
+                                                                                    <h5 style="font-size: 1.5rem; font-weight: 600; text-align:center;">Contact & Address Information</h5>
                                                                                 </div>
                                                                                 <li><strong>Address:</strong> ${response.address || ''}</li>
                                                                                 <li><strong>Contact Number:</strong> ${response.contact_number || ''}</li>
@@ -859,7 +872,7 @@
                                                                                 
                                                                                 <!-- Dependent Details -->
                                                                                 <div class="card-header text-white" style="
-                                                                                    background: linear-gradient(135deg, rgb(7, 118, 33), rgb(181, 202, 179));
+                                                                                    background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179));
                                                                                     border-bottom: none;
                                                                                     padding: 1rem;
                                                                                     border-radius: 20px 20px 0 0;
@@ -873,7 +886,14 @@
                                                                                         <li><strong>Date of Birth:</strong> ${dependent.dependent_date_of_birth ? new Date(dependent.dependent_date_of_birth).toLocaleDateString('en-US') : ''}</li>
                                                                                         <li><strong>Mononym:</strong> ${dependent.dependent_mononym ? 'Yes' : 'No'}</li>
                                                                                         <li><strong>Permanent Disability:</strong> ${dependent.permanent_disability ? 'Yes' : 'No'}</li>
-                                                                                        <li><strong>Attachment Type 2:</strong> ${dependent.attachment_type_2 || ''}</li>
+
+                                                                                        <li>
+                                                                                          <strong>Attachment Dependent:</strong>
+                                                                                          ${dependent.attachment_2
+                                                                                            ? `<a href="data:application/octet-stream;base64,${btoa(dependent.attachment_2)}" target="_blank" download="${response.philhealth_id}-${dependent.attachment_type_2 || 'Attachment'}-Dependent.png">${dependent.attachment_type_2 || 'View Attachment'}</a>` 
+                                                                                            : 'No attachment uploaded.'}
+                                                                                        </li>
+
                                                                                         <li><strong>Admission Date:</strong> ${dependent.admission_date_2 ? new Date(dependent.admission_date_2).toLocaleDateString('en-US') : ''}</li>
                                                                                         <li><strong>Discharge Date:</strong> ${dependent.discharge_date_2 ? new Date(dependent.discharge_date_2).toLocaleDateString('en-US') : ''}</li>
                                                                                         <li><strong>Status:</strong> ${dependent.status_2 || ''}</li>
@@ -885,12 +905,14 @@
                                                                         `;
                                                                         $('#patientDetailsContent').html(content);
                                                                     },
-                                                                    error: function() {
+                                                                    error: function(jqXHR, textStatus, errorThrown) {
+                                                                        console.error("AJAX error:", textStatus, errorThrown);
                                                                         $('#patientDetailsContent').html('<p>Error fetching patient details. Please try again later.</p>');
                                                                     }
                                                                 });
                                                             });
                                                           </script>
+
                                                             <div class="modal fade" id="editPatientModal" tabindex="-1" aria-labelledby="editPatientModalLabel" aria-hidden="true">
                                                               <div class="modal-dialog modal-lg">
                                                                 <div class="modal-content">
@@ -932,8 +954,13 @@
                                                                     <!-- Newly Added Fields -->
                                                                     <li><strong>Reason/Purpose:</strong> ${data.reason_or_purpose || ''}</li>
                                                                     <li><strong>Status:</strong> ${data.status || ''}</li>
-                                                                    <li><strong>Attachment Type 1:</strong> ${data.attachment_type_1 || ''}</li>
-                                                                    <li><strong>Attachment Type 2:</strong> ${data.attachment_type_2 || ''}</li>
+                                                                    <li>
+                                                                      <strong>Attachment 1:</strong>
+                                                                      ${dependent.attachment_1 
+                                                                        ? `<a href="data:application/octet-stream;base64,${btoa(dependent.attachment_1)}" target="_blank">${dependent.attachment_type_1 || 'View Attachment 1'} </a>` 
+                                                                        : 'No attachment uploaded.'}
+                                                                      <br/><input type="file" name="dependents[${index}][attachment_1]">
+                                                                    </li>
                                                                     
                                                                     <!-- Personal Information -->
                                                                     <div class="card-header text-white" style="
@@ -946,9 +973,9 @@
                                                                     </div>
                                                                     <li><strong>Member Name:</strong> ${data.member_first_name} ${data.member_middle_name || ''} ${data.member_last_name} ${data.member_extension_name || ''}</li>
                                                                     <li><strong>Mononym:</strong> ${data.member_mononym ? 'Yes' : 'No'}</li>
-                                                                    <li><strong>Mother's Name:</strong> ${data.mother_first_name} ${data.mother_middle_name || ''} ${data.mother_last_name} ${data.mother_extension_name || ''}</li>
+                                                                    <li><strong>Mother's Name:</strong> ${data.mother_first_name || ''} ${data.mother_middle_name || ''} ${data.mother_last_name || ''} ${data.mother_extension_name || ''}</li>
                                                                     <li><strong>Mother's Mononym:</strong> ${data.mother_mononym ? 'Yes' : 'No'}</li>
-                                                                    <li><strong>Spouse's Name:</strong> ${data.spouse_first_name} ${data.spouse_middle_name || ''} ${data.spouse_last_name} ${data.spouse_extension_name || ''}</li>
+                                                                    <li><strong>Spouse's Name:</strong> ${data.spouse_first_name || ''} ${data.spouse_middle_name || ''} ${data.spouse_last_name || ''} ${data.spouse_extension_name || ''}</li>
                                                                     <li><strong>Spouse's Mononym:</strong> ${data.spouse_mononym ? 'Yes' : 'No'}</li>
                                                                     <li><strong>Date of Birth:</strong> ${data.date_of_birth ? new Date(data.date_of_birth).toLocaleDateString('en-US') : ''}</li>
                                                                     <li><strong>Place of Birth:</strong> ${data.place_of_birth || ''}</li>
@@ -965,7 +992,7 @@
                                                                         padding: 1rem;
                                                                         border-radius: 20px 20px 0 0;
                                                                       ">
-                                                                      <h5 style="font-size: 1.5rem; font-weight: 600; text-align:center;">Contact &amp; Address Information</h5>
+                                                                      <h5 style="font-size: 1.5rem; font-weight: 600; text-align:center;">Contact & Address Information</h5>
                                                                     </div>
                                                                     <li><strong>Address:</strong> ${data.address || ''}</li>
                                                                     <li><strong>Contact Number:</strong> ${data.contact_number || ''}</li>
@@ -983,14 +1010,20 @@
                                                                       ">
                                                                       <h5 style="font-size: 1.5rem; font-weight: 600; text-align:center;">Dependent Details</h5>
                                                                     </div>
-                                                                    ${data.dependents && data.dependents.length > 0 ? data.dependents.map(dependent => `
+                                                                    ${data.dependents && data.dependents.length > 0 ? data.dependents.map((dependent, index) => `
                                                                       <ul>
                                                                         <li><strong>Dependent Name:</strong> ${dependent.dependent_first_name} ${dependent.dependent_middle_name || ''} ${dependent.dependent_last_name} ${dependent.dependent_extension_name || ''}</li>
                                                                         <li><strong>Relationship:</strong> ${dependent.dependent_relationship || ''}</li>
                                                                         <li><strong>Date of Birth:</strong> ${dependent.dependent_date_of_birth ? new Date(dependent.dependent_date_of_birth).toLocaleDateString('en-US') : ''}</li>
                                                                         <li><strong>Mononym:</strong> ${dependent.dependent_mononym ? 'Yes' : 'No'}</li>
                                                                         <li><strong>Permanent Disability:</strong> ${dependent.permanent_disability ? 'Yes' : 'No'}</li>
-                                                                        <li><strong>Attachment Type 2:</strong> ${dependent.attachment_type_2 || ''}</li>
+                                                                        <li>
+                                                                          <strong>Attachment 2:</strong>
+                                                                          ${dependent.attachment_2 
+                                                                            ? `<a href="data:application/octet-stream;base64,${btoa(dependent.attachment_2)}"  target="_blank">${dependent.attachment_type_2 || 'View Attachment 2'}</a>` 
+                                                                            : 'No attachment uploaded.'}
+                                                                          <br/><input type="file" name="dependents[${index}][attachment_2]">
+                                                                        </li>
                                                                         <li><strong>Admission Date:</strong> ${dependent.admission_date_2 ? new Date(dependent.admission_date_2).toLocaleDateString('en-US') : ''}</li>
                                                                         <li><strong>Discharge Date:</strong> ${dependent.discharge_date_2 ? new Date(dependent.discharge_date_2).toLocaleDateString('en-US') : ''}</li>
                                                                         <li><strong>Status:</strong> ${dependent.status_2 || ''}</li>
@@ -1003,340 +1036,450 @@
                                                               }
 
 
+
                                                               // Function to render the edit form for patient and dependents
-// Function to render the edit form for patient and dependents
-function renderPatientEditForm(data) {
-  return `
-    <form id="editPatientForm">
-      
-      <!-- Patient Details Edit Section -->
-      <fieldset class="border p-3 mb-3">
-        <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Form Details</legend>
-        
-        <div class="mb-3">
-          <label for="health_record_id" class="form-label">Health Record ID</label>
-          <input type="text" class="form-control" id="health_record_id" name="health_record_id" value="${data.health_record_id || ''}" readonly>
-        </div>
-        
-        <div class="mb-3">
-          <label for="philhealth_id" class="form-label">PhilHealth ID</label>
-          <input type="text" class="form-control" id="philhealth_id" name="philhealth_id" placeholder="Enter PhilHealth ID" value="${data.philhealth_id || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="purpose" class="form-label">Purpose</label>
-          <select class="form-select" id="purpose" name="purpose">
-            <option value="Registration" ${data.purpose === 'Registration' ? 'selected' : ''}>Registration</option>
-            <option value="Updating/Amendment" ${data.purpose === 'Updating/Amendment' ? 'selected' : ''}>Updating/Amendment</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="provider_konsulta" class="form-label">Provider Konsulta</label>
-          <input type="text" class="form-control" id="provider_konsulta" name="provider_konsulta" placeholder="Enter Provider Konsulta" value="${data.provider_konsulta || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="admission_date" class="form-label">Admission Date</label>
-          <input type="date" class="form-control" id="admission_date" name="admission_date" value="${data.admission_date ? new Date(data.admission_date).toISOString().split('T')[0] : ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="discharge_date" class="form-label">Discharge Date</label>
-          <input type="date" class="form-control" id="discharge_date" name="discharge_date" value="${data.discharge_date ? new Date(data.discharge_date).toISOString().split('T')[0] : ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="reason_or_purpose" class="form-label">Reason/Purpose</label>
-          <input type="text" class="form-control" id="reason_or_purpose" name="reason_or_purpose" placeholder="Enter Reason or Purpose" value="${data.reason_or_purpose || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="status" class="form-label">Status</label>
-          <input type="text" class="form-control" id="status" name="status" placeholder="Enter Status" value="${data.status || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="attachment_type_1" class="form-label">Attachment Type 1</label>
-          <input type="text" class="form-control" id="attachment_type_1" name="attachment_type_1" placeholder="Enter Attachment Type 1" value="${data.attachment_type_1 || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="attachment_type_2" class="form-label">Attachment Type 2</label>
-          <input type="text" class="form-control" id="attachment_type_2" name="attachment_type_2" placeholder="Enter Attachment Type 2" value="${data.attachment_type_2 || ''}">
-        </div>
-      </fieldset>
-
-      <!-- Personal Information Edit Section -->
-      <fieldset class="border p-3 mb-3">
-        <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Personal Information</legend>
-        
-        <div class="mb-3">
-          <label for="member_first_name" class="form-label">Member First Name</label>
-          <input type="text" class="form-control" id="member_first_name" name="member_first_name" placeholder="Enter Member First Name" value="${data.member_first_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="member_middle_name" class="form-label">Member Middle Name</label>
-          <input type="text" class="form-control" id="member_middle_name" name="member_middle_name" placeholder="Enter Member Middle Name" value="${data.member_middle_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="member_last_name" class="form-label">Member Last Name</label>
-          <input type="text" class="form-control" id="member_last_name" name="member_last_name" placeholder="Enter Member Last Name" value="${data.member_last_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="member_extension_name" class="form-label">Member Extension Name</label>
-          <input type="text" class="form-control" id="member_extension_name" name="member_extension_name" placeholder="Enter Member Extension Name" value="${data.member_extension_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="member_mononym" class="form-label">Member Mononym</label>
-          <select class="form-select" id="member_mononym" name="member_mononym">
-            <option value="1" ${data.member_mononym ? 'selected' : ''}>Yes</option>
-            <option value="0" ${!data.member_mononym ? 'selected' : ''}>No</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="mother_first_name" class="form-label">Mother's First Name</label>
-          <input type="text" class="form-control" id="mother_first_name" name="mother_first_name" placeholder="Enter Mother's First Name" value="${data.mother_first_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="mother_middle_name" class="form-label">Mother's Middle Name</label>
-          <input type="text" class="form-control" id="mother_middle_name" name="mother_middle_name" placeholder="Enter Mother's Middle Name" value="${data.mother_middle_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="mother_last_name" class="form-label">Mother's Last Name</label>
-          <input type="text" class="form-control" id="mother_last_name" name="mother_last_name" placeholder="Enter Mother's Last Name" value="${data.mother_last_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="mother_extension_name" class="form-label">Mother's Extension Name</label>
-          <input type="text" class="form-control" id="mother_extension_name" name="mother_extension_name" placeholder="Enter Mother's Extension Name" value="${data.mother_extension_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="mother_mononym" class="form-label">Mother's Mononym</label>
-          <select class="form-select" id="mother_mononym" name="mother_mononym">
-            <option value="1" ${data.mother_mononym ? 'selected' : ''}>Yes</option>
-            <option value="0" ${!data.mother_mononym ? 'selected' : ''}>No</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="spouse_first_name" class="form-label">Spouse's First Name</label>
-          <input type="text" class="form-control" id="spouse_first_name" name="spouse_first_name" placeholder="Enter Spouse's First Name" value="${data.spouse_first_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="spouse_middle_name" class="form-label">Spouse's Middle Name</label>
-          <input type="text" class="form-control" id="spouse_middle_name" name="spouse_middle_name" placeholder="Enter Spouse's Middle Name" value="${data.spouse_middle_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="spouse_last_name" class="form-label">Spouse's Last Name</label>
-          <input type="text" class="form-control" id="spouse_last_name" name="spouse_last_name" placeholder="Enter Spouse's Last Name" value="${data.spouse_last_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="spouse_extension_name" class="form-label">Spouse's Extension Name</label>
-          <input type="text" class="form-control" id="spouse_extension_name" name="spouse_extension_name" placeholder="Enter Spouse's Extension Name" value="${data.spouse_extension_name || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="spouse_mononym" class="form-label">Spouse's Mononym</label>
-          <select class="form-select" id="spouse_mononym" name="spouse_mononym">
-            <option value="1" ${data.spouse_mononym ? 'selected' : ''}>Yes</option>
-            <option value="0" ${!data.spouse_mononym ? 'selected' : ''}>No</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="date_of_birth" class="form-label">Date of Birth</label>
-          <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="${data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="place_of_birth" class="form-label">Place of Birth</label>
-          <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" placeholder="Enter Place of Birth" value="${data.place_of_birth || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="sex" class="form-label">Sex</label>
-          <select class="form-select" id="sex" name="sex">
-            <option value="Male" ${data.sex === 'Male' ? 'selected' : ''}>Male</option>
-            <option value="Female" ${data.sex === 'Female' ? 'selected' : ''}>Female</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="civil_status" class="form-label">Civil Status</label>
-          <select class="form-select" id="civil_status" name="civil_status">
-            <option value="Single" ${data.civil_status === 'Single' ? 'selected' : ''}>Single</option>
-            <option value="Married" ${data.civil_status === 'Married' ? 'selected' : ''}>Married</option>
-            <option value="Annulled" ${data.civil_status === 'Annulled' ? 'selected' : ''}>Annulled</option>
-            <option value="Widower" ${data.civil_status === 'Widower' ? 'selected' : ''}>Widower</option>
-            <option value="Legally Separated" ${data.civil_status === 'Legally Separated' ? 'selected' : ''}>Legally Separated</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="citizenship" class="form-label">Citizenship</label>
-          <select class="form-select" id="citizenship" name="citizenship">
-            <option value="Filipino" ${data.citizenship === 'Filipino' ? 'selected' : ''}>Filipino</option>
-            <option value="Foreign National" ${data.citizenship === 'Foreign National' ? 'selected' : ''}>Foreign National</option>
-            <option value="Dual Citizen" ${data.citizenship === 'Dual Citizen' ? 'selected' : ''}>Dual Citizen</option>
-          </select>
-        </div>
-        
-        <div class="mb-3">
-          <label for="philsys_id" class="form-label">PhilSys ID</label>
-          <input type="text" class="form-control" id="philsys_id" name="philsys_id" placeholder="Enter PhilSys ID" value="${data.philsys_id || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="tax_payer_id" class="form-label">Taxpayer ID</label>
-          <input type="text" class="form-control" id="tax_payer_id" name="tax_payer_id" placeholder="Enter Taxpayer ID" value="${data.tax_payer_id || ''}">
-        </div>
-      </fieldset>
-
-      <!-- Contact and Address Information Edit Section -->
-      <fieldset class="border p-3 mb-3">
-        <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Contact &amp; Address Information</legend>
-        
-        <div class="mb-3">
-          <label for="address" class="form-label">Address</label>
-          <textarea class="form-control" id="address" name="address" rows="2" placeholder="Enter Address">${data.address || ''}</textarea>
-        </div>
-        
-        <div class="mb-3">
-          <label for="contact_number" class="form-label">Contact Number</label>
-          <input type="text" class="form-control" id="contact_number" name="contact_number" placeholder="Enter Contact Number" value="${data.contact_number || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="home_phone_number" class="form-label">Home Phone Number</label>
-          <input type="text" class="form-control" id="home_phone_number" name="home_phone_number" placeholder="Enter Home Phone Number" value="${data.home_phone_number || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="business_direct_line" class="form-label">Business Direct Line</label>
-          <input type="text" class="form-control" id="business_direct_line" name="business_direct_line" placeholder="Enter Business Direct Line" value="${data.business_direct_line || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="email_address" class="form-label">Email Address</label>
-          <input type="email" class="form-control" id="email_address" name="email_address" placeholder="Enter Email Address" value="${data.email_address || ''}">
-        </div>
-        
-        <div class="mb-3">
-          <label for="mailing_address" class="form-label">Mailing Address</label>
-          <textarea class="form-control" id="mailing_address" name="mailing_address" rows="2" placeholder="Enter Mailing Address">${data.mailing_address || ''}</textarea>
-        </div>
-      </fieldset>
-
-      <!-- Dependent Details Edit Section -->
-      <fieldset class="border p-3 mb-3">
-        <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Dependent Details</legend>
-        ${data.dependents && data.dependents.length > 0 ? data.dependents.map((dependent, index) => `
-          <div class="dependent-edit mb-3" data-index="${index}">
-            <!-- Hidden field for the dependent ID -->
-            <input type="hidden" name="dependents[${index}][dependent_hospital_id]" value="${dependent.dependent_hospital_id || ''}">
-            <div class="card mb-2">
-              <div class="card-header" style="background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179)); color: white;">
-                Dependent ${index + 1} Details
-              </div>
-              <div class="card-body">
-                <div class="mb-3">
-                  <label for="dependent_first_name_${index}" class="form-label">Dependent First Name</label>
-                  <input type="text" class="form-control" id="dependent_first_name_${index}" name="dependents[${index}][dependent_first_name]" placeholder="Enter Dependent First Name" value="${dependent.dependent_first_name || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_middle_name_${index}" class="form-label">Dependent Middle Name</label>
-                  <input type="text" class="form-control" id="dependent_middle_name_${index}" name="dependents[${index}][dependent_middle_name]" placeholder="Enter Dependent Middle Name" value="${dependent.dependent_middle_name || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_last_name_${index}" class="form-label">Dependent Last Name</label>
-                  <input type="text" class="form-control" id="dependent_last_name_${index}" name="dependents[${index}][dependent_last_name]" placeholder="Enter Dependent Last Name" value="${dependent.dependent_last_name || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_extension_name_${index}" class="form-label">Dependent Extension Name</label>
-                  <input type="text" class="form-control" id="dependent_extension_name_${index}" name="dependents[${index}][dependent_extension_name]" placeholder="Enter Dependent Extension Name" value="${dependent.dependent_extension_name || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_relationship_${index}" class="form-label">Relationship</label>
-                  <input type="text" class="form-control" id="dependent_relationship_${index}" name="dependents[${index}][dependent_relationship]" placeholder="Enter Relationship" value="${dependent.dependent_relationship || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_date_of_birth_${index}" class="form-label">Dependent Date of Birth</label>
-                  <input type="date" class="form-control" id="dependent_date_of_birth_${index}" name="dependents[${index}][dependent_date_of_birth]" value="${dependent.dependent_date_of_birth ? new Date(dependent.dependent_date_of_birth).toISOString().split('T')[0] : ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="dependent_mononym_${index}" class="form-label">Dependent Mononym</label>
-                  <select class="form-select" id="dependent_mononym_${index}" name="dependents[${index}][dependent_mononym]">
-                    <option value="1" ${dependent.dependent_mononym ? 'selected' : ''}>Yes</option>
-                    <option value="0" ${!dependent.dependent_mononym ? 'selected' : ''}>No</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label for="permanent_disability_${index}" class="form-label">Permanent Disability</label>
-                  <select class="form-select" id="permanent_disability_${index}" name="dependents[${index}][permanent_disability]">
-                    <option value="1" ${dependent.permanent_disability ? 'selected' : ''}>Yes</option>
-                    <option value="0" ${!dependent.permanent_disability ? 'selected' : ''}>No</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label for="attachment_type_2_${index}" class="form-label">Attachment Type 2</label>
-                  <input type="text" class="form-control" id="attachment_type_2_${index}" name="dependents[${index}][attachment_type_2]" placeholder="Enter Attachment Type 2" value="${dependent.attachment_type_2 || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="admission_date_2_${index}" class="form-label">Admission Date</label>
-                  <input type="date" class="form-control" id="admission_date_2_${index}" name="dependents[${index}][admission_date_2]" value="${dependent.admission_date_2 ? new Date(dependent.admission_date_2).toISOString().split('T')[0] : ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="discharge_date_2_${index}" class="form-label">Discharge Date</label>
-                  <input type="date" class="form-control" id="discharge_date_2_${index}" name="dependents[${index}][discharge_date_2]" value="${dependent.discharge_date_2 ? new Date(dependent.discharge_date_2).toISOString().split('T')[0] : ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="status_2_${index}" class="form-label">Status</label>
-                  <input type="text" class="form-control" id="status_2_${index}" name="dependents[${index}][status_2]" placeholder="Enter Status" value="${dependent.status_2 || ''}">
-                </div>
-                <div class="mb-3">
-                  <label for="reason_or_purpose2_${index}" class="form-label">Reason/Purpose</label>
-                  <input type="text" class="form-control" id="reason_or_purpose2_${index}" name="dependents[${index}][reason_or_purpose2]" placeholder="Enter Reason/Purpose" value="${dependent.reason_or_purpose2 || ''}">
-                </div>
-              </div>
-            </div>
-          </div>
-        `).join('') : '<p>No dependents found.</p>'}
-      </fieldset>
-
-      <div class="text-end">
-        <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
-        <button type="submit" class="btn btn-primary" id="saveEditBtn">Save</button>
-      </div>
-    </form>
-  `;
-}
+                                                              function renderPatientEditForm(data) {
+                                                                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                                                                return `
+                                                                  <form id="editPatientForm" enctype="multipart/form-data">
+                                                                    <input type="hidden" name="_token" value="${csrfToken}">
+                                                                    <input type="hidden" name="_method" value="PUT"> <!-- Use PUT for updates -->
+                                                                    
+                                                                    <!-- Patient Details Edit Section -->
+                                                                    <fieldset class="border p-3 mb-3">
+                                                                      <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Form Details</legend>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="health_record_id" class="form-label">Health Record ID</label>
+                                                                        <input type="text" class="form-control" id="health_record_id" name="health_record_id" value="${data.health_record_id || ''}" readonly>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="philhealth_id" class="form-label">PhilHealth ID</label>
+                                                                        <input type="text" class="form-control" id="philhealth_id" name="philhealth_id" placeholder="Enter PhilHealth ID" value="${data.philhealth_id || ''}" readonly>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="purpose" class="form-label">Purpose</label>
+                                                                        <select class="form-select" id="purpose" name="purpose">
+                                                                          <option value="Registration" ${data.purpose === 'Registration' ? 'selected' : ''}>Registration</option>
+                                                                          <option value="Updating/Amendment" ${data.purpose === 'Updating/Amendment' ? 'selected' : ''}>Updating/Amendment</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="provider_konsulta" class="form-label">Provider Konsulta</label>
+                                                                        <input type="text" class="form-control" id="provider_konsulta" name="provider_konsulta" placeholder="Enter Provider Konsulta" value="${data.provider_konsulta || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="admission_date" class="form-label">Admission Date</label>
+                                                                        <input type="date" class="form-control" id="admission_date" name="admission_date" value="${data.admission_date ? new Date(data.admission_date).toISOString().split('T')[0] : ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="discharge_date" class="form-label">Discharge Date</label>
+                                                                        <input type="date" class="form-control" id="discharge_date" name="discharge_date" value="${data.discharge_date ? new Date(data.discharge_date).toISOString().split('T')[0] : ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="reason_or_purpose" class="form-label">Reason/Purpose</label>
+                                                                        <input type="text" class="form-control" id="reason_or_purpose" name="reason_or_purpose" placeholder="Enter Reason or Purpose" value="${data.reason_or_purpose || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="status" class="form-label">Status</label>
+                                                                        <input type="text" class="form-control" id="status" name="status" placeholder="Enter Status" value="${data.status || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="attachment_type_1" class="form-label">Type of Attachment (Member) <span style="color: red;">*</span></label>
+                                                                        <select id="attachment_type_1" name="attachment_type_1" class="form-control" required onchange="validateSelection()">
+                                                                          <option value="" disabled ${!data.attachment_type_1 ? 'selected' : ''}>Please select a type</option>
+                                                                          <option value="Dependent Birth Cert." ${data.attachment_type_1 === 'Dependent Birth Cert.' ? 'selected' : ''}>Dependent Birth Cert.</option>
+                                                                          <option value="Member Birth Cert." ${data.attachment_type_1 === 'Member Birth Cert.' ? 'selected' : ''}>Member Birth Cert.</option>
+                                                                          <option value="Marriage Cert." ${data.attachment_type_1 === 'Marriage Cert.' ? 'selected' : ''}>Marriage Cert.</option>
+                                                                          <option value="Postal ID" ${data.attachment_type_1 === 'Postal ID' ? 'selected' : ''}>Postal ID</option>
+                                                                          <option value="Senior ID" ${data.attachment_type_1 === 'Senior ID' ? 'selected' : ''}>Senior ID</option>
+                                                                          <option value="Voter's ID" ${data.attachment_type_1 === "Voter's ID" ? 'selected' : ''}>Voter's ID</option>
+                                                                          <option value="National ID" ${data.attachment_type_1 === 'National ID' ? 'selected' : ''}>National ID</option>
+                                                                          <option value="Voter's Cert." ${data.attachment_type_1 === "Voter's Cert." ? 'selected' : ''}>Voter's Cert.</option>
+                                                                          <option value="Baptismal Cert." ${data.attachment_type_1 === 'Baptismal Cert.' ? 'selected' : ''}>Baptismal Cert.</option>
+                                                                          <option value="TIN ID" ${data.attachment_type_1 === 'TIN ID' ? 'selected' : ''}>TIN ID</option>
+                                                                          <option value="PWD ID" ${data.attachment_type_1 === 'PWD ID' ? 'selected' : ''}>PWD ID</option>
+                                                                          <option value="SSS ID" ${data.attachment_type_1 === 'SSS ID' ? 'selected' : ''}>SSS ID</option>
+                                                                          <option value="UMID" ${data.attachment_type_1 === 'UMID' ? 'selected' : ''}>UMID</option>
+                                                                          <option value="Barangay Cert." ${data.attachment_type_1 === 'Barangay Cert.' ? 'selected' : ''}>Barangay Cert.</option>
+                                                                          <option value="PMRF" ${data.attachment_type_1 === 'PMRF' ? 'selected' : ''}>PMRF</option>
+                                                                          <option value="Driver's License" ${data.attachment_type_1 === "Driver's License" ? 'selected' : ''}>Driver's License</option>
+                                                                          <option value="Passport" ${data.attachment_type_1 === 'Passport' ? 'selected' : ''}>Passport</option>
+                                                                          <option value="Affidavit" ${data.attachment_type_1 === 'Affidavit' ? 'selected' : ''}>Affidavit</option>
+                                                                        </select>
+                                                                        <div class="invalid-feedback">Please select an attachment type.</div>
+                                                                      </div>
 
 
-                                                              // When the view modal is shown, load the patient details (using your existing AJAX GET endpoint)
+                                                                      <div class="mb-3">
+                                                                        <label for="attachment_1" class="form-label">Attachment 1</label>
+                                                                        <!-- Display the current attachment if it exists -->
+                                                                        <div>
+                                                                          ${data.attachment_1 
+                                                                            ? `<a href="${data.attachment_1}" target="_blank" download="${data.philhealth_id}-${data.attachment_type_1}-Member.png">Download Current Attachment</a>` 
+                                                                            : '<span>No attachment uploaded.</span>'}
+                                                                        </div>
+                                                                        <!-- File input for uploading a new attachment -->
+                                                                        <input type="file" class="form-control" id="attachment_1" name="attachment_1" accept=".jpg,.jpeg,.png,.pdf">
+                                                                        <small class="form-text text-muted">
+                                                                          If you do not choose a new file, the current attachment will remain unchanged.
+                                                                        </small>
+                                                                      </div>
+                                                                    </fieldset>
+
+                                                                    <!-- Personal Information Edit Section -->
+                                                                    <fieldset class="border p-3 mb-3">
+                                                                      <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Personal Information</legend>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="member_first_name" class="form-label">Member First Name</label>
+                                                                        <input type="text" class="form-control" id="member_first_name" name="member_first_name" placeholder="Enter Member First Name" value="${data.member_first_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="member_middle_name" class="form-label">Member Middle Name</label>
+                                                                        <input type="text" class="form-control" id="member_middle_name" name="member_middle_name" placeholder="Enter Member Middle Name" value="${data.member_middle_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="member_last_name" class="form-label">Member Last Name</label>
+                                                                        <input type="text" class="form-control" id="member_last_name" name="member_last_name" placeholder="Enter Member Last Name" value="${data.member_last_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="member_extension_name" class="form-label">Member Extension Name</label>
+                                                                        <input type="text" class="form-control" id="member_extension_name" name="member_extension_name" placeholder="Enter Member Extension Name" value="${data.member_extension_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="member_mononym" class="form-label">Member Mononym</label>
+                                                                        <select class="form-select" id="member_mononym" name="member_mononym">
+                                                                          <option value="1" ${data.member_mononym ? 'selected' : ''}>Yes</option>
+                                                                          <option value="0" ${!data.member_mononym ? 'selected' : ''}>No</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mother_first_name" class="form-label">Mother's First Name</label>
+                                                                        <input type="text" class="form-control" id="mother_first_name" name="mother_first_name" placeholder="Enter Mother's First Name" value="${data.mother_first_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mother_middle_name" class="form-label">Mother's Middle Name</label>
+                                                                        <input type="text" class="form-control" id="mother_middle_name" name="mother_middle_name" placeholder="Enter Mother's Middle Name" value="${data.mother_middle_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mother_last_name" class="form-label">Mother's Last Name</label>
+                                                                        <input type="text" class="form-control" id="mother_last_name" name="mother_last_name" placeholder="Enter Mother's Last Name" value="${data.mother_last_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mother_extension_name" class="form-label">Mother's Extension Name</label>
+                                                                        <input type="text" class="form-control" id="mother_extension_name" name="mother_extension_name" placeholder="Enter Mother's Extension Name" value="${data.mother_extension_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mother_mononym" class="form-label">Mother's Mononym</label>
+                                                                        <select class="form-select" id="mother_mononym" name="mother_mononym">
+                                                                          <option value="1" ${data.mother_mononym ? 'selected' : ''}>Yes</option>
+                                                                          <option value="0" ${!data.mother_mononym ? 'selected' : ''}>No</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="spouse_first_name" class="form-label">Spouse's First Name</label>
+                                                                        <input type="text" class="form-control" id="spouse_first_name" name="spouse_first_name" placeholder="Enter Spouse's First Name" value="${data.spouse_first_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="spouse_middle_name" class="form-label">Spouse's Middle Name</label>
+                                                                        <input type="text" class="form-control" id="spouse_middle_name" name="spouse_middle_name" placeholder="Enter Spouse's Middle Name" value="${data.spouse_middle_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="spouse_last_name" class="form-label">Spouse's Last Name</label>
+                                                                        <input type="text" class="form-control" id="spouse_last_name" name="spouse_last_name" placeholder="Enter Spouse's Last Name" value="${data.spouse_last_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="spouse_extension_name" class="form-label">Spouse's Extension Name</label>
+                                                                        <input type="text" class="form-control" id="spouse_extension_name" name="spouse_extension_name" placeholder="Enter Spouse's Extension Name" value="${data.spouse_extension_name || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="spouse_mononym" class="form-label">Spouse's Mononym</label>
+                                                                        <select class="form-select" id="spouse_mononym" name="spouse_mononym">
+                                                                          <option value="1" ${data.spouse_mononym ? 'selected' : ''}>Yes</option>
+                                                                          <option value="0" ${!data.spouse_mononym ? 'selected' : ''}>No</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                                                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="${data.date_of_birth ? new Date(data.date_of_birth).toISOString().split('T')[0] : ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="place_of_birth" class="form-label">Place of Birth</label>
+                                                                        <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" placeholder="Enter Place of Birth" value="${data.place_of_birth || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="sex" class="form-label">Sex</label>
+                                                                        <select class="form-select" id="sex" name="sex">
+                                                                          <option value="Male" ${data.sex === 'Male' ? 'selected' : ''}>Male</option>
+                                                                          <option value="Female" ${data.sex === 'Female' ? 'selected' : ''}>Female</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="civil_status" class="form-label">Civil Status</label>
+                                                                        <select class="form-select" id="civil_status" name="civil_status">
+                                                                          <option value="Single" ${data.civil_status === 'Single' ? 'selected' : ''}>Single</option>
+                                                                          <option value="Married" ${data.civil_status === 'Married' ? 'selected' : ''}>Married</option>
+                                                                          <option value="Annulled" ${data.civil_status === 'Annulled' ? 'selected' : ''}>Annulled</option>
+                                                                          <option value="Widower" ${data.civil_status === 'Widower' ? 'selected' : ''}>Widower</option>
+                                                                          <option value="Legally Separated" ${data.civil_status === 'Legally Separated' ? 'selected' : ''}>Legally Separated</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="citizenship" class="form-label">Citizenship</label>
+                                                                        <select class="form-select" id="citizenship" name="citizenship">
+                                                                          <option value="Filipino" ${data.citizenship === 'Filipino' ? 'selected' : ''}>Filipino</option>
+                                                                          <option value="Foreign National" ${data.citizenship === 'Foreign National' ? 'selected' : ''}>Foreign National</option>
+                                                                          <option value="Dual Citizen" ${data.citizenship === 'Dual Citizen' ? 'selected' : ''}>Dual Citizen</option>
+                                                                        </select>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="philsys_id" class="form-label">PhilSys ID</label>
+                                                                        <input type="text" class="form-control" id="philsys_id" name="philsys_id" placeholder="Enter PhilSys ID" value="${data.philsys_id || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="tax_payer_id" class="form-label">Taxpayer ID</label>
+                                                                        <input type="text" class="form-control" id="tax_payer_id" name="tax_payer_id" placeholder="Enter Taxpayer ID" value="${data.tax_payer_id || ''}">
+                                                                      </div>
+                                                                    </fieldset>
+
+                                                                    <!-- Contact and Address Information Edit Section -->
+                                                                    <fieldset class="border p-3 mb-3">
+                                                                      <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Contact &amp; Address Information</legend>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="address" class="form-label">Address</label>
+                                                                        <textarea class="form-control" id="address" name="address" rows="2" placeholder="Enter Address">${data.address || ''}</textarea>
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="contact_number" class="form-label">Contact Number</label>
+                                                                        <input type="text" class="form-control" id="contact_number" name="contact_number" placeholder="Enter Contact Number" value="${data.contact_number || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="home_phone_number" class="form-label">Home Phone Number</label>
+                                                                        <input type="text" class="form-control" id="home_phone_number" name="home_phone_number" placeholder="Enter Home Phone Number" value="${data.home_phone_number || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="business_direct_line" class="form-label">Business Direct Line</label>
+                                                                        <input type="text" class="form-control" id="business_direct_line" name="business_direct_line" placeholder="Enter Business Direct Line" value="${data.business_direct_line || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="email_address" class="form-label">Email Address</label>
+                                                                        <input type="email" class="form-control" id="email_address" name="email_address" placeholder="Enter Email Address" value="${data.email_address || ''}">
+                                                                      </div>
+                                                                      
+                                                                      <div class="mb-3">
+                                                                        <label for="mailing_address" class="form-label">Mailing Address</label>
+                                                                        <textarea class="form-control" id="mailing_address" name="mailing_address" rows="2" placeholder="Enter Mailing Address">${data.mailing_address || ''}</textarea>
+                                                                      </div>
+                                                                    </fieldset>
+
+                                                                    <!-- Dependent Details Edit Section -->
+                                                                  <fieldset class="border p-3 mb-3">
+                                                                    <legend class="w-auto px-2" style="font-size:1.5rem; font-weight:600;">Dependent Details</legend>
+                                                                    ${data.dependents && data.dependents.length > 0 ? data.dependents.map((dependent, index) => `
+                                                                      <div class="dependent-edit mb-3" data-index="${index}">
+                                                                        <!-- Hidden field for the dependent ID -->
+                                                                        <input type="hidden" name="dependents[${index}][dependent_hospital_id]" value="${dependent.dependent_hospital_id || ''}">
+                                                                        <div class="card mb-2">
+                                                                          <div class="card-header" style="background: linear-gradient(135deg, rgb(7,118,33), rgb(181,202,179)); color: white;">
+                                                                            Dependent ${index + 1} Details
+                                                                          </div>
+                                                                          <div class="card-body">
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_first_name_${index}" class="form-label">Dependent First Name</label>
+                                                                              <input type="text" class="form-control" id="dependent_first_name_${index}" name="dependents[${index}][dependent_first_name]" placeholder="Enter Dependent First Name" value="${dependent.dependent_first_name || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_middle_name_${index}" class="form-label">Dependent Middle Name</label>
+                                                                              <input type="text" class="form-control" id="dependent_middle_name_${index}" name="dependents[${index}][dependent_middle_name]" placeholder="Enter Dependent Middle Name" value="${dependent.dependent_middle_name || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_last_name_${index}" class="form-label">Dependent Last Name</label>
+                                                                              <input type="text" class="form-control" id="dependent_last_name_${index}" name="dependents[${index}][dependent_last_name]" placeholder="Enter Dependent Last Name" value="${dependent.dependent_last_name || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_extension_name_${index}" class="form-label">Dependent Extension Name</label>
+                                                                              <input type="text" class="form-control" id="dependent_extension_name_${index}" name="dependents[${index}][dependent_extension_name]" placeholder="Enter Dependent Extension Name" value="${dependent.dependent_extension_name || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_relationship_${index}" class="form-label">Relationship</label>
+                                                                              <input type="text" class="form-control" id="dependent_relationship_${index}" name="dependents[${index}][dependent_relationship]" placeholder="Enter Relationship" value="${dependent.dependent_relationship || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_date_of_birth_${index}" class="form-label">Dependent Date of Birth</label>
+                                                                              <input type="date" class="form-control" id="dependent_date_of_birth_${index}" name="dependents[${index}][dependent_date_of_birth]" value="${dependent.dependent_date_of_birth ? new Date(dependent.dependent_date_of_birth).toISOString().split('T')[0] : ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="attachment_type_2_${index}" class="form-label">Type of Attachment (Dependent) <span style="color: red;">*</span></label>
+                                                                              <select id="attachment_type_2_${index}" name="dependents[${index}][attachment_type_2]" class="form-control" onchange="validateSelection()">
+                                                                                <option value="" disabled ${!dependent.attachment_type_2 ? 'selected' : ''}>Please select a type</option>
+                                                                                <option value="Dependent Birth Cert." ${dependent.attachment_type_2 === 'Dependent Birth Cert.' ? 'selected' : ''}>Dependent Birth Cert.</option>
+                                                                                <option value="Member Birth Cert." ${dependent.attachment_type_2 === 'Member Birth Cert.' ? 'selected' : ''}>Member Birth Cert.</option>
+                                                                                <option value="Marriage Cert." ${dependent.attachment_type_2 === 'Marriage Cert.' ? 'selected' : ''}>Marriage Cert.</option>
+                                                                                <option value="Postal ID" ${dependent.attachment_type_2 === 'Postal ID' ? 'selected' : ''}>Postal ID</option>
+                                                                                <option value="Senior ID" ${dependent.attachment_type_2 === 'Senior ID' ? 'selected' : ''}>Senior ID</option>
+                                                                                <option value="Voter's ID" ${dependent.attachment_type_2 === "Voter's ID" ? 'selected' : ''}>Voter's ID</option>
+                                                                                <option value="National ID" ${dependent.attachment_type_2 === 'National ID' ? 'selected' : ''}>National ID</option>
+                                                                                <option value="Voter's Cert." ${dependent.attachment_type_2 === "Voter's Cert." ? 'selected' : ''}>Voter's Cert.</option>
+                                                                                <option value="Baptismal Cert." ${dependent.attachment_type_2 === 'Baptismal Cert.' ? 'selected' : ''}>Baptismal Cert.</option>
+                                                                                <option value="TIN ID" ${dependent.attachment_type_2 === 'TIN ID' ? 'selected' : ''}>TIN ID</option>
+                                                                                <option value="PWD ID" ${dependent.attachment_type_2 === 'PWD ID' ? 'selected' : ''}>PWD ID</option>
+                                                                                <option value="SSS ID" ${dependent.attachment_type_2 === 'SSS ID' ? 'selected' : ''}>SSS ID</option>
+                                                                                <option value="UMID" ${dependent.attachment_type_2 === 'UMID' ? 'selected' : ''}>UMID</option>
+                                                                                <option value="Barangay Cert." ${dependent.attachment_type_2 === 'Barangay Cert.' ? 'selected' : ''}>Barangay Cert.</option>
+                                                                                <option value="PMRF" ${dependent.attachment_type_2 === 'PMRF' ? 'selected' : ''}>PMRF</option>
+                                                                                <option value="Driver's License" ${dependent.attachment_type_2 === "Driver's License" ? 'selected' : ''}>Driver's License</option>
+                                                                                <option value="Passport" ${dependent.attachment_type_2 === 'Passport' ? 'selected' : ''}>Passport</option>
+                                                                                <option value="Affidavit" ${dependent.attachment_type_2 === 'Affidavit' ? 'selected' : ''}>Affidavit</option>
+                                                                              </select>
+                                                                              <div class="invalid-feedback">Please select an attachment type.</div>
+                                                                            </div>
+
+                                                                            <!-- Attachment 2 (Binary File) -->
+                                                                            <div class="mb-3">
+                                                                              <label for="attachment_2_${index}" class="form-label">Attachment 2</label>
+                                                                              <div>
+                                                                                ${dependent.attachment_2
+                                                                                  ? `<a href="${dependent.attachment_2}" target="_blank" download="${dependent.dependent_hospital_id}-${dependent.attachment_type_2 || 'attachment'}">Download Current Attachment</a>`
+                                                                                  : '<span>No attachment uploaded.</span>'}
+                                                                              </div>
+                                                                              <input
+                                                                                type="file"
+                                                                                class="form-control"
+                                                                                id="attachment_2_${index}"
+                                                                                name="dependents[${index}][attachment_2]"
+                                                                                accept=".jpg,.jpeg,.png,.pdf">
+                                                                              <small class="form-text text-muted">
+                                                                                If you do not choose a new file, the current attachment will remain unchanged.
+                                                                              </small>
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="dependent_mononym_${index}" class="form-label">Dependent Mononym</label>
+                                                                              <select class="form-select" id="dependent_mononym_${index}" name="dependents[${index}][dependent_mononym]">
+                                                                                <option value="1" ${dependent.dependent_mononym ? 'selected' : ''}>Yes</option>
+                                                                                <option value="0" ${!dependent.dependent_mononym ? 'selected' : ''}>No</option>
+                                                                              </select>
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="permanent_disability_${index}" class="form-label">Permanent Disability</label>
+                                                                              <select class="form-select" id="permanent_disability_${index}" name="dependents[${index}][permanent_disability]">
+                                                                                <option value="1" ${dependent.permanent_disability ? 'selected' : ''}>Yes</option>
+                                                                                <option value="0" ${!dependent.permanent_disability ? 'selected' : ''}>No</option>
+                                                                              </select>
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="admission_date_2_${index}" class="form-label">Admission Date</label>
+                                                                              <input type="date" class="form-control" id="admission_date_2_${index}" name="dependents[${index}][admission_date_2]" value="${dependent.admission_date_2 ? new Date(dependent.admission_date_2).toISOString().split('T')[0] : ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="discharge_date_2_${index}" class="form-label">Discharge Date</label>
+                                                                              <input type="date" class="form-control" id="discharge_date_2_${index}" name="dependents[${index}][discharge_date_2]" value="${dependent.discharge_date_2 ? new Date(dependent.discharge_date_2).toISOString().split('T')[0] : ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="status_2_${index}" class="form-label">Status</label>
+                                                                              <input type="text" class="form-control" id="status_2_${index}" name="dependents[${index}][status_2]" placeholder="Enter Status" value="${dependent.status_2 || ''}">
+                                                                            </div>
+                                                                            <div class="mb-3">
+                                                                              <label for="reason_or_purpose2_${index}" class="form-label">Reason/Purpose</label>
+                                                                              <input type="text" class="form-control" id="reason_or_purpose2_${index}" name="dependents[${index}][reason_or_purpose2]" placeholder="Enter Reason/Purpose" value="${dependent.reason_or_purpose2 || ''}">
+                                                                            </div>
+                                                                          </div>
+                                                                        </div>
+                                                                      </div>
+                                                                    `).join('') : '<p>No dependents found.</p>'}
+                                                                  </fieldset>
+                                                                    <div class="text-end">
+                                                                      <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+                                                                      <button type="submit" class="btn btn-primary" id="saveEditBtn">Save</button>
+                                                                    </div>
+                                                                  </form>
+                                                                `;
+                                                              }
+                                                              // When the view modal is shown, load the patient details
                                                               $('#patientModal').on('show.bs.modal', function (event) {
-                                                                var button = $(event.relatedTarget);
-                                                                var patientId = button.data('patient-id');
+                                                                var button = $(event.relatedTarget); // Button that triggered the modal
+                                                                var patientId = button.data('patient-id'); // Extract patient ID from data-* attributes
+
+                                                                // Show loading spinner and set initial content
+                                                                $('#patientDetailsContent').html(`
+                                                                  <div class="text-center">
+                                                                    <div class="spinner-border text-primary" role="status">
+                                                                      <span class="visually-hidden">Loading...</span>
+                                                                    </div>
+                                                                    <p class="mt-2">Loading patient details...</p>
+                                                                  </div>
+                                                                `);
+
+                                                                // Set a placeholder title
+                                                                $('#patientModalLabel').text('Patient Details');
+
+                                                                // Fetch patient details via AJAX
                                                                 $.ajax({
                                                                   url: '{{ route("admin.view_details", ":patientId") }}'.replace(':patientId', patientId),
                                                                   method: 'GET',
                                                                   success: function(response) {
+                                                                    console.log('Patient details fetched successfully:', response); // Log response for debugging
                                                                     patientData = response;
+
+                                                                    // Update modal title with patient name or ID
+                                                                    var patientName = response.member_first_name + ' ' + response.member_last_name;
+                                                                    $('#patientModalLabel').text(`Patient Details: ${patientName}`);
+
+                                                                    // Render the patient view
                                                                     $('#patientDetailsContent').html(renderPatientView(response));
                                                                   },
-                                                                  error: function() {
-                                                                    $('#patientDetailsContent').html('<p>Error fetching patient details. Please try again later.</p>');
+                                                                  error: function(xhr, status, error) {
+                                                                    console.error('Error fetching patient details:', error); // Log error for debugging
+
+                                                                    // Show error message with a retry button
+                                                                    $('#patientDetailsContent').html(`
+                                                                      <div class="alert alert-danger" role="alert">
+                                                                        <h4 class="alert-heading">Error!</h4>
+                                                                        <p>Failed to fetch patient details. Please try again.</p>
+                                                                        <hr>
+                                                                        <button class="btn btn-warning" id="retryFetchBtn">Retry</button>
+                                                                      </div>
+                                                                    `);
+
+                                                                    // Add click event listener for the retry button
+                                                                    $('#retryFetchBtn').on('click', function() {
+                                                                      $('#patientModal').modal('hide'); // Close the modal
+                                                                      $('#patientModal').modal('show'); // Reopen the modal to trigger the fetch again
+                                                                    });
                                                                   }
                                                                 });
                                                               });
@@ -1365,25 +1508,40 @@ function renderPatientEditForm(data) {
                                                               });
 
                                                               // Handle the edit form submission
-                                                              $(document).on('submit', '#editPatientForm', function(e) {
-                                                                e.preventDefault();
-                                                                var formData = $(this).serialize();
+                                                              $(document).on('submit', '#editPatientForm', function (e) {
+                                                                e.preventDefault(); // Prevent the default form submission
+
+                                                                // Create a FormData object to handle file uploads
+                                                                var formData = new FormData(this);
+
+                                                                // Append additional data if needed
+                                                                formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+                                                                formData.append('_method', 'PUT'); // Use PUT for updates
+
+                                                                // Log the FormData for debugging
+                                                                for (var pair of formData.entries()) {
+                                                                  console.log(pair[0] + ': ', pair[1]);
+                                                                }
+
+                                                                // Send the AJAX request
                                                                 $.ajax({
                                                                   url: '{{ route("admin.update_details", ":patientId") }}'.replace(':patientId', patientData.health_record_id),
-                                                                  method: 'POST', // Use POST as defined in the route; adjust if you use PUT/PATCH
+                                                                  method: 'POST', // Use POST with _method=PUT for Laravel
                                                                   data: formData,
-                                                                  success: function(updatedData) {
-                                                                    patientData = updatedData;
+                                                                  processData: false, // Prevent jQuery from processing the data
+                                                                  contentType: false, // Prevent jQuery from setting the content type
+                                                                  success: function (response) {
+                                                                    console.log('Patient details updated successfully:', response);
+                                                                    patientData = response;
+
                                                                     // Hide the edit modal and refresh the view modal with updated data
-                                                                    var editModalEl = document.getElementById('editPatientModal');
-                                                                    var editModal = bootstrap.Modal.getInstance(editModalEl);
-                                                                    editModal.hide();
-                                                                    $('#patientDetailsContent').html(renderPatientView(updatedData));
-                                                                    var viewModal = new bootstrap.Modal(document.getElementById('patientModal'));
-                                                                    viewModal.show();
+                                                                    $('#editPatientModal').modal('hide');
+                                                                    $('#patientDetailsContent').html(renderPatientView(response));
+                                                                    $('#patientModal').modal('show');
                                                                   },
-                                                                  error: function() {
-                                                                    alert('Failed to update patient details.');
+                                                                  error: function (jqXHR, textStatus, errorThrown) {
+                                                                    console.error('Failed to update patient details:', textStatus, errorThrown);
+                                                                    alert('Failed to update patient details. Please try again.');
                                                                   }
                                                                 });
                                                               });
@@ -1391,30 +1549,53 @@ function renderPatientEditForm(data) {
 
 
                                                           <!-- Delete User -->
-                                                          <form action="{{ route('patients.delete', $patient->health_record_id) }}" method="POST" onsubmit="return confirmDeletion(event);">
-                                                              @csrf
-                                                              @method('DELETE')
-                                                              <button type="submit" class="text-danger" title="Delete Patient">
-                                                                  <i class="lni lni-trash-can"></i>
-                                                              </button>
-                                                          </form>
-
+                                                          <form action="{{ route('patients.delete', $patient->health_record_id) }}" method="POST" onsubmit="return confirmDeletion(event, {{ $patient->dependents->count() }});">
+    @csrf
+    @method('DELETE')
+    <!-- Hidden dependent ID for deletion -->
+    <input type="hidden" name="dependent_id" value="{{ $dependent->dependent_hospital_id }}">
+    <button type="submit" class="text-danger" title="Delete Dependent">
+        <i class="lni lni-trash-can"></i>
+    </button>
+</form>
                                                           <script>
-                                                              function confirmDeletion(event) {
-                                                                  // Show a prompt asking the user to type CONFIRM
-                                                                  const userInput = prompt("To confirm deletion, please type 'CONFIRM':");
+  function confirmDeletion(event, dependentCount) {
+      // Get the form element from the event target
+      let form = event.target;
+      
+      if (dependentCount >= 2) {
+          // For members with 2 or more dependents, retrieve the dependent ID from a hidden input
+          let depInput = form.querySelector('input[name="dependent_id"]');
+          let depId = depInput ? depInput.value.trim() : "";
+          
+          if (!depId) {
+              alert("Deletion canceled: Dependent ID not found.");
+              event.preventDefault();
+              return false;
+          }
+          
+          // Ask for confirmation using the collected dependent ID
+          let confirmation = prompt("Type CONFIRM to delete the dependent with ID " + depId + ":");
+          if (confirmation !== "CONFIRM") {
+              alert("Deletion canceled. You did not type CONFIRM.");
+              event.preventDefault();
+              return false;
+          }
+          return true;
+      } else {
+          // For members with 0 or 1 dependent, confirm deletion of the member and any dependents.
+          let confirmation = prompt("Type CONFIRM to delete this member and their dependents (if any):");
+          if (confirmation !== "CONFIRM") {
+              alert("Deletion canceled. You did not type CONFIRM.");
+              event.preventDefault();
+              return false;
+          }
+          return true;
+      }
+  }
+</script>
 
-                                                                  // Check if the user typed CONFIRM (case-sensitive)
-                                                                  if (userInput === "CONFIRM") {
-                                                                      return true; // Allow form submission
-                                                                  }
 
-                                                                  // Prevent form submission if the input is incorrect
-                                                                  alert("Deletion canceled. You must type 'CONFIRM' to delete the patient.");
-                                                                  event.preventDefault();
-                                                                  return false;
-                                                              }
-                                                          </script>
                                                       </div>
                                                   </td>
                                                   <!-- Date of Expiry (60 days) -->
@@ -1448,17 +1629,30 @@ function renderPatientEditForm(data) {
                                                       @if($patient->member_middle_name) {{ strtoupper($patient->member_middle_name) }} @endif
                                                       @if($patient->member_extension_name) {{ strtoupper($patient->member_extension_name) }} @endif
                                                   </td>
+                                                  <!-- Dependent ID -->
+                                                  <td class="dependent-id" style="display: none;">{{ $dependent->dependent_hospital_id }}</td>
 
                                                   <!-- MEMBER - BIRTHDAY -->
                                                   <td>{{ optional($patient->date_of_birth)->format('Y/m/d') ?? '' }}</td>
 
                                                   <!-- DEPENDENT - PATIENT -->
                                                   <td>
-                                                      {{ strtoupper($dependent->dependent_last_name) }},
-                                                      {{ strtoupper($dependent->dependent_first_name) }}
-                                                      @if ($dependent->dependent_middle_name) {{ strtoupper($dependent->dependent_middle_name) }} @endif
-                                                      @if ($dependent->dependent_extension_name) {{ strtoupper($dependent->dependent_extension_name) }} @endif
+                                                      @if(!empty($dependent->dependent_last_name) || !empty($dependent->dependent_first_name))
+                                                          {{-- If last name exists, display it with a trailing comma --}}
+                                                          {{ !empty($dependent->dependent_last_name) ? strtoupper($dependent->dependent_last_name) . ',' : '' }}
+                                                          {{-- Display first name with a leading space if present --}}
+                                                          {{ !empty($dependent->dependent_first_name) ? ' ' . strtoupper($dependent->dependent_first_name) : '' }}
+                                                          {{-- Optionally display middle name --}}
+                                                          @if(!empty($dependent->dependent_middle_name))
+                                                              {{ ' ' . strtoupper($dependent->dependent_middle_name) }}
+                                                          @endif
+                                                          {{-- Optionally display extension --}}
+                                                          @if(!empty($dependent->dependent_extension_name))
+                                                              {{ ' ' . strtoupper($dependent->dependent_extension_name) }}
+                                                          @endif
+                                                      @endif
                                                   </td>
+
 
                                                   <!-- DEPENDENT - BIRTHDAY -->
                                                   <td>{{ $dependent->dependent_date_of_birth ? \Carbon\Carbon::parse($dependent->dependent_date_of_birth)->format('Y/m/d') : '' }}</td>

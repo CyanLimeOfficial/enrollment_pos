@@ -75,10 +75,10 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 
 
     // ============== ACTION BUTTONS =================
-    Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'delete'])->name('patients.delete');
+    Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'deletePatient'])->name('patients.delete');
     Route::get('admin/patients/get-patient-details/{id}', [AdminPatientController::class, 'getPatientDetails'])
     ->name('admin.view_details');
-    Route::post('admin/update_patient/{id}', [PatientController::class, 'updatePatientDetails'])
+    Route::put('/admin/patients/get-patient-details/update-details/{patient}', [AdminPatientController::class, 'updatePatientDetails'])
     ->name('admin.update_details');
 
 // --------------- Archive ------------------
