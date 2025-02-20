@@ -21,29 +21,34 @@ class TransmittalExport implements FromCollection
     protected $numberOfClaims;
     protected $issuedBy;
 
-    public function __construct($data, $transmittalId, $datePrepared, $preparedBy, $numberOfClaims, $issuedBy)
+    public function __construct($data, $transmittalId, $datePrepared, $preparedBy, $position, $numberOfClaims, $issuedBy)
     {
         $this->data = $data;
         $this->transmittalId = $transmittalId;
         $this->datePrepared = $datePrepared;
+        $this->position = $position;
         $this->preparedBy = $preparedBy;
         $this->numberOfClaims = $numberOfClaims;
         $this->issuedBy = $issuedBy;
 
         Log::info('TransmittalExport initialized', [
-            'transmittalId' => $this->transmittalId,
-            'datePrepared' => $this->datePrepared,
-            'preparedBy' => $this->preparedBy,
+            'transmittalId'  => $this->transmittalId,
+            'datePrepared'   => $this->datePrepared,
+            'preparedBy'     => $this->preparedBy,
+            'position'       => $this->position,
             'numberOfClaims' => $this->numberOfClaims,
-            'issuedBy' => $this->issuedBy,
-            'data_count' => count($this->data),
+            'issuedBy'       => $this->issuedBy,
+            'data_count'     => count($this->data),
         ]);
     }
+    
 
     public function collection()
     {
-        // Load the Excel template
-        $templatePath = storage_path('app/templates/transmittal_template.xlsx');
+        // ------------------------------------------------------------------
+        // 1. Load the Excel template and insert basic transmittal details
+        // ------------------------------------------------------------------
+        $templatePath = storage_path('app/templates/transmittal_template_semi_final.xlsx');
         Log::info("Checking template file existence at: $templatePath");
 
         if (!file_exists($templatePath)) {
@@ -61,7 +66,7 @@ class TransmittalExport implements FromCollection
 
         $sheet = $spreadsheet->getActiveSheet();
 
-        // Insert transmittal details
+        // Insert transmittal details (e.g. writing transmittal ID in cell C2)
         try {
             $sheet->setCellValue('C2', $this->transmittalId);
             Log::info("Inserted transmittal details successfully.");
@@ -70,42 +75,219 @@ class TransmittalExport implements FromCollection
             throw $e;
         }
 
-        // Start writing data from A5 to P5 and downward
+        // Define a border style array for all generated cells.
+        $borderStyleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color'       => ['argb' => 'FF000000'], // black
+                ],
+            ],
+        ];
+
+        // Set the starting row for data insertion and define the boundary.
+        // We work within columns A to P (16 columns) as our header spans A–P.
         $startRow = 5;
-        $startColumn = 'A';
         $endColumn = 'M';
 
-        Log::info("Starting to insert data into spreadsheet. Rows to process: " . count($this->data));
-
-        foreach ($this->data as $index => $rowData) {
-            $colIndex = 1;
-            Log::info("Processing row #$index", ['rowData' => $rowData]);
-
-            foreach ($rowData as $value) {
-                $columnLetter = Coordinate::stringFromColumnIndex($colIndex);
-                if ($columnLetter > $endColumn) break;
-
-                try {
-                    $sheet->setCellValue($columnLetter . $startRow, $value);
-                    Log::info("Inserted [$value] at $columnLetter$startRow");
-                } catch (\Exception $e) {
-                    Log::error("Error inserting value at $columnLetter$startRow: " . $e->getMessage());
-                }
-
-                $colIndex++;
+        // ------------------------------------------------------------------
+        // 2. Group Data by Category (first column)
+        // ------------------------------------------------------------------
+        $groupedData = [];
+        foreach ($this->data as $row) {
+            $category = $row[0];
+            if (!isset($groupedData[$category])) {
+                $groupedData[$category] = [];
             }
-
-            $startRow++;
+            $groupedData[$category][] = $row;
         }
 
-        // Ensure the directory exists before saving
+        // Define the desired order of categories.
+        $categoriesOrder = [
+            "POS",
+            "SENIOR",
+            "NTHS " . date('Y'),
+            "LISTAHAN " . date('Y'),
+            "4P'S " . date('Y')
+        ];
+
+        // ------------------------------------------------------------------
+        // 3. Process Each Category Group and Write to the Spreadsheet
+        // ------------------------------------------------------------------
+        // Global counter for continuous numbering.
+        $globalCounter = 1;
+        foreach ($categoriesOrder as $catName) {
+            if (!isset($groupedData[$catName])) {
+                continue;
+            }
+
+            // --- 3a. Insert a Category Header Row ---
+            $currentHeaderRow = $startRow;
+            $headerCell = "A{$currentHeaderRow}";
+            $sheet->mergeCells("A{$currentHeaderRow}:M{$currentHeaderRow}");
+            $sheet->setCellValue($headerCell, $catName);
+            $sheet->getRowDimension($currentHeaderRow)->setRowHeight(25);
+
+            // Style header row (Century Gothic, 19pt, bold, italic, centered).
+            $style = $sheet->getStyle($headerCell);
+            $style->getFont()->setName('Century Gothic')->setSize(19)->setBold(true)->setItalic(true);
+            $style->getAlignment()
+                  ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                  ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            $sheet->getStyle("A{$currentHeaderRow}:M{$currentHeaderRow}")->applyFromArray($borderStyleArray);
+
+            $startRow++; // Next row for data.
+
+            // --- 3b. Write the Group's Data Rows with Continuous Numbering ---
+            foreach ($groupedData[$catName] as $rowData) {
+                array_shift($rowData); // Remove category value.
+                $rowData[0] = $globalCounter;
+                $globalCounter++;
+
+                $colIndex = 1;
+                foreach ($rowData as $value) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($colIndex);
+                    if ($columnLetter > $endColumn) break;
+                    $cellAddress = $columnLetter . $startRow;
+                    try {
+                        $sheet->setCellValue($cellAddress, $value);
+                        Log::info("Inserted [$value] at $cellAddress");
+                    } catch (\Exception $e) {
+                        Log::error("Error inserting value at $cellAddress: " . $e->getMessage());
+                    }
+                    // Apply border and font styling.
+                    $sheet->getStyle($cellAddress)->applyFromArray($borderStyleArray);
+                    $sheet->getStyle($cellAddress)->getFont()->setName('Century Gothic')->setSize(12);
+
+                    // Set alignment based on column number.
+                    switch ($colIndex) {
+                        case 1:
+                            $alignment = \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_RIGHT;
+                            break;
+                        case 5:
+                        case 7:
+                            $alignment = \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT;
+                            break;
+                        case 2:
+                        case 3:
+                        case 4:
+                        case 6:
+                        case 8:
+                        case 9:
+                        case 10:
+                        case 11:
+                        case 12:
+                        case 13:
+                        default:
+                            $alignment = \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER;
+                            break;
+                    }
+                    $sheet->getStyle($cellAddress)->getAlignment()->setHorizontal($alignment);
+
+                    $colIndex++;
+                }
+                $startRow++;
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 3c. Insert Merged Cell for Number of Claims
+        // ------------------------------------------------------------------
+        $mergedRow = $startRow; // Next available row.
+        $sheet->mergeCells("A{$mergedRow}:B{$mergedRow}");
+        $claimsText = strtoupper($this->numberOfClaims . " CLAIMS");
+        $sheet->setCellValue("A{$mergedRow}", $claimsText);
+        $mergedStyle = $sheet->getStyle("A{$mergedRow}");
+        $mergedStyle->getFont()->setName('Century Gothic')->setSize(12)->setBold(true);
+        $mergedStyle->getAlignment()
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+            ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        $sheet->getStyle("A{$mergedRow}:B{$mergedRow}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+
+        // -------------------------------
+        // Additional Rows after Claims (Calibri 11)
+        // -------------------------------
+        // All additional rows below will be set with Calibri, 11pt.
+        // Row after claims: Vacant Row.
+        $rowVacant1 = $mergedRow + 1;
+        // (No action needed; it's left blank.)
+        
+        // Next row: Row for "Prepared By:" and "Recieved By:"
+        $rowPreparedRecieved = $mergedRow + 2;
+        // Merge B and C for "Prepared By:" and set that value.
+        $sheet->mergeCells("B{$rowPreparedRecieved}:C{$rowPreparedRecieved}");
+        $sheet->setCellValue("B{$rowPreparedRecieved}", "Prepared By:");
+        // In column I, set "Recieved By:" (without centering).
+        $sheet->setCellValue("I{$rowPreparedRecieved}", "Recieved By:");
+        // Apply Calibri 11 to both.
+        $sheet->getStyle("B{$rowPreparedRecieved}:C{$rowPreparedRecieved}")
+              ->getFont()->setName('Calibri')->setSize(11);
+        $sheet->getStyle("I{$rowPreparedRecieved}")
+              ->getFont()->setName('Calibri')->setSize(11);
+        // (No centering applied for "Recieved By:")
+
+        // Next row: Another Vacant Row.
+        $rowVacant2 = $mergedRow + 3;
+        // (Left blank.)
+
+        // Next row: Row for Prepared By value and blank container with bottom border.
+        $rowPreparedValue = $mergedRow + 4;
+        // Merge B, C, and D for the preparedBy value.
+        $sheet->mergeCells("B{$rowPreparedValue}:D{$rowPreparedValue}");
+        $sheet->setCellValue("B{$rowPreparedValue}", $this->preparedBy);
+        // Style: Calibri 11, bold, centered.
+        $sheet->getStyle("B{$rowPreparedValue}:D{$rowPreparedValue}")
+              ->getFont()->setName('Calibri')->setSize(11)->setBold(true);
+        $sheet->getStyle("B{$rowPreparedValue}:D{$rowPreparedValue}")
+              ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                               ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+        // Merge I and J to create a blank container with a bottom border.
+        $sheet->mergeCells("I{$rowPreparedValue}:J{$rowPreparedValue}");
+        // Set the bottom border only (underline effect).
+        $sheet->getStyle("I{$rowPreparedValue}:J{$rowPreparedValue}")
+              ->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        // Apply Calibri 11 to the merged I-J.
+        $sheet->getStyle("I{$rowPreparedValue}:J{$rowPreparedValue}")
+              ->getFont()->setName('Calibri')->setSize(11);
+
+        // Next row: Row for Administrative Assistant I.
+        $rowAdminAssistant = $mergedRow + 5;
+        // Merge B, C, and D, then set value.
+        $sheet->mergeCells("B{$rowAdminAssistant}:D{$rowAdminAssistant}");
+        $sheet->setCellValue("B{$rowAdminAssistant}", $this->position);
+
+        // Style: Calibri 11, centered, black font.
+        $style = $sheet->getStyle("B{$rowAdminAssistant}:D{$rowAdminAssistant}");
+        $style->getFont()->setName('Calibri')->setSize(11)->getColor()->setRGB('000000');
+        $style->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                            ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+        // Next row: Row for present day date in column C.
+        $rowDate = $mergedRow + 6;
+        $sheet->setCellValue("C{$rowDate}", date('F j, Y'));
+        // Style: Calibri 11.
+        $sheet->getStyle("C{$rowDate}")
+              ->getFont()->setName('Calibri')->setSize(11);
+        // (Alignment as default.)
+
+        // -------------------------------
+        // Set entire "I" column number format to number with 0 decimals.
+        // -------------------------------
+        $sheet->getStyle('I:I')->getNumberFormat()->setFormatCode('0');
+
+        // Optional: Set page setup for Excel export (A4, landscape)
+        $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
+        $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+
+        // ------------------------------------------------------------------
+        // 4. Save the File and Insert a Record into the Database
+        // ------------------------------------------------------------------
         $directoryPath = storage_path('app/public/transmittal/');
         if (!Storage::disk('public')->exists('transmittal')) {
             Log::warning("Directory 'transmittal' not found, creating it now.");
             Storage::disk('public')->makeDirectory('transmittal');
         }
 
-        // Save the file
         $fileName = 'transmittal_' . now()->timestamp . '.xlsx';
         $exportPath = 'transmittal/' . $fileName;
         $fullPath = storage_path('app/public/' . $exportPath);
@@ -126,24 +308,22 @@ class TransmittalExport implements FromCollection
             throw $e;
         }
 
-        // Throw the fucking shitty binary
         $fileContents = Storage::disk('public')->get($exportPath);
-
-
         Log::info("File converted to base64 blob.");
 
-        // Store the transmittal record in the database
         DB::table('transmittals')->insert([
-            'transmittal_id' => $this->transmittalId,
+            'transmittal_id'         => $this->transmittalId,
             'attachment_transmittal' => $fileContents,
-            'date_prepared' => $this->datePrepared,
-            'prepared_by' => $this->preparedBy,
-            'number_of_claims' => $this->numberOfClaims,
-            'issued_by' => $this->issuedBy,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'date_prepared'          => $this->datePrepared,
+            'prepared_by'            => $this->preparedBy,
+            'position'               => $this->position,
+            'number_of_claims'       => $this->numberOfClaims,
+            'issued_by'              => $this->issuedBy,
+            'created_at'             => now(),
+            'updated_at'             => now(),
         ]);
         Log::info("Transmittal record inserted into database.");
-        
+
+        return new Collection([]);
     }
 }

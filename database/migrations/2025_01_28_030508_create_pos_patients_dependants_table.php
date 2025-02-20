@@ -28,6 +28,8 @@ class CreatePosPatientsDependantsTable extends Migration
             $table->dateTime('discharge_date_2')->nullable(); // Optional
             $table->text('status_2')->nullable(); // Required
             $table->text('reason_or_purpose2')->nullable(); // Optional
+            $table->boolean('archive_lock_2')->nullable();
+            $table->string('transmittal_id_2')->nullable(); // Required
 
             $table->timestamps();
         });

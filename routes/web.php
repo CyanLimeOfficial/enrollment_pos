@@ -68,6 +68,7 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 
     // Download Attachment
     Route::get('/patients/download/{id}/{attachment}', [AdminPatientController::class, 'download'])->name('patients.download');
+    Route::get('/patients/download-2/{id}/{attachment}', [AdminPatientController::class, 'download_2'])->name('patients.download_2');
     
     // Generate Transmittal Form
     Route::post('/admin/patients/transmittal-form', [AdminPatientController::class, 'exportTransmittal'])
@@ -76,6 +77,9 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 
     // ============== ACTION BUTTONS =================
     Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'deletePatient'])->name('patients.delete');
+    Route::post('admin/patients/add-dependent', [AdminPatientController::class, 'addDependent'])->name('patients.add_dependent');
+    // Add this route to fetch the dependents and member info
+    Route::get('admin/patients/get_dependents', [AdminPatientController::class, 'getDependents'])->name('patients.get_dependents');
     Route::get('admin/patients/get-patient-details/{id}', [AdminPatientController::class, 'getPatientDetails'])
     ->name('admin.view_details');
     Route::put('/admin/patients/get-patient-details/update-details/{patient}', [AdminPatientController::class, 'updatePatientDetails'])
@@ -87,14 +91,17 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
 Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::get('archive-patient-list', [AdminPatientListController::class, 'redirectToPatientList'])->name('admin.archive.patientList_archive_admin');
 });
+Route::get('/admin/archive-transmittal/download/{transmittalId}', [AdminPatientListController::class, 'downloadByTransmittalId'])
+    ->name('transmittal.downloadById');
 
 // Redirect to Archive Transmittal
 Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::get('archive-transmittal', [AdminTransmittalController::class, 'redirectToTransmittal'])->name('admin.archive.transmittal_archive_admin');
 });
-// Route for downloading a transmittal attachment
-Route::get('/transmittals/{id}/download', [AdminTransmittalController::class, 'download'])->name('transmittals.download');
-
+    // Route for downloading a transmittal attachment
+    Route::get('/transmittals/{id}/download', [AdminTransmittalController::class, 'download'])->name('transmittals.download');
+    Route::get('/transmittals/{id}/preview', [AdminTransmittalController::class, 'preview'])
+        ->name('transmittals.preview');
 // --------------- User Management ------------------
 
 Route::prefix('/admin')->middleware('auth')->group(function () {

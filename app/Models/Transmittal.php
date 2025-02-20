@@ -18,6 +18,7 @@ class Transmittal extends Model
         'attachment_transmittal',
         'date_prepared',
         'prepared_by',
+        'position',
         'number_of_claims',
         'issued_by',
         'created_at',

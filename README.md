@@ -33,3 +33,26 @@ A modern and efficient Point-of-Sale (POS) system designed specifically for Phil
 - Composer
 - Node.js & npm
 - MySQL
+
+
+
+# Release Notes – February 20, 2025
+
+## Updated Filter and Patient List
+- **Status:** Partially working
+- **Pending Enhancements:**
+  - Add additional filtering functionality (to be implemented tomorrow).
+  - Remove dependent rows and revert to the patient view for transmittal adjustments (planned for next week).
+
+## Audit Control
+- **Status:** In development
+- **Notes:** Implementation of comprehensive audit controls is underway.
+
+## User Management
+- **Feature:** Account Activation/Deactivation
+- **Status:** Under development
+- **Notes:** Enhancements for activating and deactivating accounts are in progress.
+
+## Reports
+- **Status:** Under consultation
+- **Notes:** Final requirements and design for report generation are being reviewed.

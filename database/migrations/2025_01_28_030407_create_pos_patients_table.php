@@ -66,6 +66,8 @@ class CreatePosPatientsTable extends Migration
             $table->text('status')->nullable(); // Required
             $table->text('attachment_type_1')->nullable(); // Required
             $table->binary('attachment_1')->nullable(); // Required
+            $table->boolean('archive_lock_1')->nullable();
+            $table->string('transmittal_id_1')->nullable();
 
             // Timestamps
             $table->timestamps();

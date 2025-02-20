@@ -1,3 +1,3 @@
 	
+new DataTable('#transmiitals_table');
 new DataTable('#example2');
-new DataTable('#example');

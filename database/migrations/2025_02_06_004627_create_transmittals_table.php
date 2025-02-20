@@ -12,11 +12,12 @@ return new class extends Migration {
     {
         Schema::create('transmittals', function (Blueprint $table) {
             $table->id(); // Primary Key
-            $table->string('transmittal_id')->unique()->nullable(); // Unique Transmittal ID
-            $table->binary('attachment_transmittal')->nullable(); // Optional
-            $table->date('date_prepared')->nullable(); // Date of preparation
-            $table->string('prepared_by')->nullable(); // User who prepared
-            $table->integer('number_of_claims')->nullable(); // Number of claims
+            $table->string('transmittal_id')->unique(); // Unique Transmittal ID
+            $table->binary('attachment_transmittal');// Optional
+            $table->date('date_prepared'); // Date of preparation
+            $table->string('prepared_by'); // User who prepared
+            $table->string('position'); // User who prepared
+            $table->integer('number_of_claims');// Number of claims
             $table->unsignedBigInteger('issued_by'); // User who issued the document
             $table->timestamps();
 
