@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\AdminPatientController;
 use App\Http\Controllers\Admin\AdminPatientListController; 
 use App\Http\Controllers\Admin\AdminTransmittalController; 
 use App\Http\Controllers\Admin\AdminUserManagementController;
+use App\Http\Controllers\Admin\AuditTrailController;
+use App\Http\Controllers\Admin\ReportsController;
 use App\Models\User;
 use App\Models\create_user;
 
@@ -35,7 +37,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // This is web routes for ADMIN
 
 // After successful login, redirect to a user-specific page (or a default dashboard)
-Route::get('/admin', [AdminDashboardController::class, 'redirectToDashboard'])->middleware('auth');
+Route::get('/admin', [AdminDashboardController::class, 'redirectToDashboard'])->middleware('auth')
+    ->name('admin.dashboard');
 
 // --------------- Patient ------------------
 
@@ -123,5 +126,12 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::post('/store_user', [AdminUserManagementController::class, 'storeUser'])->name('store.user');
 });
 
+// --------------- Audit Trails ------------------
+Route::get('admin/audit-trails', [AuditTrailController::class, 'redirectToAuditTrails'])
+    ->name('admin.audit-trails');
+
+// --------------- Reports ------------------
+Route::get('admin/reports', [ReportsController::class, 'redirectToReports'])
+    ->name('admin.reports');
 
 

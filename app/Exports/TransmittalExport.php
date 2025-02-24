@@ -66,6 +66,21 @@ class TransmittalExport implements FromCollection
 
         $sheet = $spreadsheet->getActiveSheet();
 
+        // Insert title in cell A1 with formatting
+        try {
+            $title = "POS ENROLLMENT AND UPDATE " . date('Y');
+            $sheet->setCellValue('A1', $title);
+            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+            Log::info("Inserted title", [
+                'cell'  => 'A1',
+                'title' => $title
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Error inserting title", ['error' => $e->getMessage()]);
+            throw $e;
+        }
+
+
         // Insert transmittal details (e.g. writing transmittal ID in cell C2)
         try {
             $sheet->setCellValue('C2', $this->transmittalId);
@@ -207,24 +222,19 @@ class TransmittalExport implements FromCollection
         // -------------------------------
         // Additional Rows after Claims (Calibri 11)
         // -------------------------------
-        // All additional rows below will be set with Calibri, 11pt.
         // Row after claims: Vacant Row.
         $rowVacant1 = $mergedRow + 1;
-        // (No action needed; it's left blank.)
+        // (Left blank.)
         
         // Next row: Row for "Prepared By:" and "Recieved By:"
         $rowPreparedRecieved = $mergedRow + 2;
-        // Merge B and C for "Prepared By:" and set that value.
         $sheet->mergeCells("B{$rowPreparedRecieved}:C{$rowPreparedRecieved}");
         $sheet->setCellValue("B{$rowPreparedRecieved}", "Prepared By:");
-        // In column I, set "Recieved By:" (without centering).
         $sheet->setCellValue("I{$rowPreparedRecieved}", "Recieved By:");
-        // Apply Calibri 11 to both.
         $sheet->getStyle("B{$rowPreparedRecieved}:C{$rowPreparedRecieved}")
               ->getFont()->setName('Calibri')->setSize(11);
         $sheet->getStyle("I{$rowPreparedRecieved}")
               ->getFont()->setName('Calibri')->setSize(11);
-        // (No centering applied for "Recieved By:")
 
         // Next row: Another Vacant Row.
         $rowVacant2 = $mergedRow + 3;
@@ -232,31 +242,23 @@ class TransmittalExport implements FromCollection
 
         // Next row: Row for Prepared By value and blank container with bottom border.
         $rowPreparedValue = $mergedRow + 4;
-        // Merge B, C, and D for the preparedBy value.
         $sheet->mergeCells("B{$rowPreparedValue}:D{$rowPreparedValue}");
         $sheet->setCellValue("B{$rowPreparedValue}", $this->preparedBy);
-        // Style: Calibri 11, bold, centered.
         $sheet->getStyle("B{$rowPreparedValue}:D{$rowPreparedValue}")
               ->getFont()->setName('Calibri')->setSize(11)->setBold(true);
         $sheet->getStyle("B{$rowPreparedValue}:D{$rowPreparedValue}")
               ->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
                                ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
-        // Merge I and J to create a blank container with a bottom border.
         $sheet->mergeCells("I{$rowPreparedValue}:J{$rowPreparedValue}");
-        // Set the bottom border only (underline effect).
         $sheet->getStyle("I{$rowPreparedValue}:J{$rowPreparedValue}")
               ->getBorders()->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
-        // Apply Calibri 11 to the merged I-J.
         $sheet->getStyle("I{$rowPreparedValue}:J{$rowPreparedValue}")
               ->getFont()->setName('Calibri')->setSize(11);
 
         // Next row: Row for Administrative Assistant I.
         $rowAdminAssistant = $mergedRow + 5;
-        // Merge B, C, and D, then set value.
         $sheet->mergeCells("B{$rowAdminAssistant}:D{$rowAdminAssistant}");
         $sheet->setCellValue("B{$rowAdminAssistant}", $this->position);
-
-        // Style: Calibri 11, centered, black font.
         $style = $sheet->getStyle("B{$rowAdminAssistant}:D{$rowAdminAssistant}");
         $style->getFont()->setName('Calibri')->setSize(11)->getColor()->setRGB('000000');
         $style->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
@@ -265,7 +267,6 @@ class TransmittalExport implements FromCollection
         // Next row: Row for present day date in column C.
         $rowDate = $mergedRow + 6;
         $sheet->setCellValue("C{$rowDate}", date('F j, Y'));
-        // Style: Calibri 11.
         $sheet->getStyle("C{$rowDate}")
               ->getFont()->setName('Calibri')->setSize(11);
         // (Alignment as default.)
@@ -275,9 +276,16 @@ class TransmittalExport implements FromCollection
         // -------------------------------
         $sheet->getStyle('I:I')->getNumberFormat()->setFormatCode('0');
 
-        // Optional: Set page setup for Excel export (A4, landscape)
-        $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
-        $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
+        // ------------------------------------------------------------------
+        // Protect the Worksheet to Prevent Editing (Password: "cookie")
+        // ------------------------------------------------------------------
+        // This will allow users to view the file, but prevent any modifications unless they know the password.
+        $sheet->getProtection()->setSheet(true);
+        $sheet->getProtection()->setPassword('You are my nigga');
+        // Optionally, you can disable inserting rows, columns, and formatting.
+        $sheet->getProtection()->setInsertRows(false);
+        $sheet->getProtection()->setInsertColumns(false);
+        $sheet->getProtection()->setFormatCells(false);
 
         // ------------------------------------------------------------------
         // 4. Save the File and Insert a Record into the Database

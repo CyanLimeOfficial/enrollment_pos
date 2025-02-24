@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 
-class PosPatient extends Model
+class PosPatient extends Model implements Auditable
 {
     use HasFactory;
+    use \OwenIt\Auditing\Auditable;
 
     // Define the table associated with the model
     protected $table = 'pos_patients';
@@ -65,6 +67,45 @@ class PosPatient extends Model
         'mother_mononym' => 'boolean',
         'spouse_mononym' => 'boolean',
     ];
+
+    public function transformAudit(array $data): array
+    {
+        // Ensure all values are properly encoded
+        array_walk_recursive($data, function (&$value) {
+            if (is_string($value)) {
+                $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            }
+        });
+
+        // Exclude BLOB attachment fields
+        unset(
+            $data['old_values']['attachment_1'], $data['new_values']['attachment_1'],
+            $data['old_values']['attachment_2'], $data['new_values']['attachment_2']
+        );
+
+        // Extract changed fields
+        $changedFields = isset($data['old_values']) ? array_keys($data['old_values']) : [];
+        $fieldsString = json_encode($changedFields, JSON_UNESCAPED_SLASHES);
+
+        // Get authenticated user's full name
+        $user = auth()->user();
+        $fullName = $user ? trim("{$user->user_first_name} {$user->user_last_name}") : 'Unknown User';
+
+        // Get Hospital ID safely
+        $hospitalId = $data['old_values']['dependent_hospital_id'] ?? 'N/A';
+
+        // Construct the audit message
+        $data['message'] = "Action: {$data['event']} | Parent ID: {$data['auditable_id']} | Hospital ID: {$hospitalId} by {$fullName} | Changed Fields: {$fieldsString}";
+
+        // Remove `old_values` and `new_values` to reduce log size
+        unset($data['old_values'], $data['new_values']);
+
+        return $data;
+    }
+
+    
+    
+
 
     // Define the relationship with the dependents
     public function dependents()

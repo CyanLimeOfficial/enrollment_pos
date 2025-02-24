@@ -21,7 +21,6 @@ A modern and efficient Point-of-Sale (POS) system designed specifically for Phil
 - **Backend**: Laravel (PHP)
 - **Database**: MySQL
 - **Version Control**: Git & GitHub
-- **Deployment**: Docker
 
 ---
 
@@ -43,11 +42,7 @@ A modern and efficient Point-of-Sale (POS) system designed specifically for Phil
 - **Pending Enhancements:**
   - Add additional filtering functionality (to be implemented tomorrow).
   - Remove dependent rows and revert to the patient view for transmittal adjustments (planned for next week).
-
-## Audit Control
-- **Status:** In development
-- **Notes:** Implementation of comprehensive audit controls is underway.
-
+  
 ## User Management
 - **Feature:** Account Activation/Deactivation
 - **Status:** Under development

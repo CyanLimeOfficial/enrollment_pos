@@ -15,29 +15,33 @@ class AdminUserManagementController extends Controller
 {
     public function redirectToUserManagement()
     {
-        // Fetch all users from the database
-        $users = User::all();
-
+        // Get the currently logged-in user's ID
+        $loggedInUserId = auth()->id();
+    
+        // Fetch all users except the logged-in user
+        $users = User::where('id', '!=', $loggedInUserId)->get();
+    
         // Process each user to include base64 profile picture
         foreach ($users as $user) {
             if ($user->profile_picture) {
-                // Convert binary data to base64-encoded string
                 try {
+                    // Convert binary data to base64-encoded string
                     $user->profile_picture_base64 = 'data:image/jpeg;base64,' . base64_encode($user->profile_picture);
                 } catch (\Exception $e) {
                     // Log the error and use a placeholder image
                     \Log::error('Error processing profile picture for user ID: ' . $user->id);
-                    $user->profile_picture_base64 = asset('assets\images\profile\default_image.png');
+                    $user->profile_picture_base64 = asset('assets/images/profile/default_image.png');
                 }
             } else {
                 // Provide a default placeholder image
-                $user->profile_picture_base64 = asset('assets\images\profile\default_image.png');
+                $user->profile_picture_base64 = asset('assets/images/profile/default_image.png');
             }
         }
-
-        // Return the view with the users data
+    
+        // Return the view with the users' data
         return view('admin.user_management_admin', compact('users'));
     }
+    
 
     public function deleteUser($id)
     {
