@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}" />
     <link rel="stylesheet" href="https://cdn.lineicons.com/3.0/lineicons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
     <style>
         #patientModal .btn-primary i {
             font-size: 1.25rem !important;
@@ -834,8 +836,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Edit Patient Details Modal -->
-
                             <div class="table-wrapper table-responsive">
                                 <table id="selectable"
                                     class="display table table-striped cell-border table-hover dataTable">
@@ -1014,8 +1014,6 @@
                                                                 </button>
                                                             </form>
 
-                                                            <!-- Add Dependent Modal -->
-
                                                             <!-- Add Dependent Button -->
                                                             <button type="button" class="text-success"
                                                                 title="Add Dependent" data-bs-toggle="modal"
@@ -1023,6 +1021,15 @@
                                                                 data-patient-id="{{ $patient->health_record_id }}">
                                                                 <i class="lni lni-plus"></i>
                                                             </button>
+
+                                                            <form action="{{ route('patients.pmrf', $patient->health_record_id) }}" method="POST" style="display: inline;">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-link text-primary p-0" title="Export PMRF">
+                                                                    <i class="fa-solid fa-file-word"></i>
+                                                                </button>
+                                                            </form>
+                                                            
+                                                             
                                                             <!-- Modal HTML -->
                                                             <div class="modal fade" id="addDependentModalization"
                                                                 tabindex="-1"

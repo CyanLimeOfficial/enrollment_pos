@@ -5483,7 +5483,10 @@ h6,
 
 /* ======= bg-primary shades ========= */
 .bg-primary-100 {
-  background: rgba(54, 92, 245, 0.1);
+  background: #198754;
+}
+.bg-secondary-100 {
+  background:rgb(104, 212, 162);
 }
 
 .bg-primary-200 {

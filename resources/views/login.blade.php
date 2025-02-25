@@ -33,8 +33,8 @@
               <div class="auth-cover-wrapper bg-primary-100">
                 <div class="auth-cover">
                   <div class="title text-center">
-                    <h1 class="text-primary mb-10">POS Transmittal Enrollment</h1>
-                    <p class="text-medium">
+                    <h1 class=" mb-10" style="color: rgb(245, 234, 234);">POS Transmittal Enrollment</h1>
+                    <p class="text-medium" style="color: rgb(222, 212, 212);">
                       Biliran Provincial Hospital
                     </p>
                   </div>
@@ -49,7 +49,7 @@
             </div>
             <!-- end col -->
             <div class="col-lg-6">
-              <div class="signin-wrapper">
+              <div class="signin-wrapper bg-secondary-100">
                 <div class="form-wrapper">
                   <h6 class="mb-15">Login Form</h6>
                   <p class="text-sm mb-25">
@@ -90,8 +90,6 @@
                   </form>
                   <div class="singin-option pt-40">
                     <p class="text-sm text-medium text-dark text-center">
-                      Don’t have any account yet?
-                      <a href="">Create an account</a>
 
                         <!-- Flash Message -->
                         @if (session('status'))

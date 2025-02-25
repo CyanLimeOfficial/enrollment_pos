@@ -13,7 +13,10 @@
     <link rel="stylesheet" href="{{ asset('assets/css/materialdesignicons.min.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/fullcalendar.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/main.css') }}" />
-
+    <!-- Datatables -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.css" rel="stylesheet">
+    <script src="https://cdn.datatables.net/v/dt/dt-2.2.1/datatables.min.js"></script>
   </head>
   <body>
     <!-- ======== Preloader =========== -->
@@ -358,7 +361,7 @@
                   <i class="lni lni-cart-full"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Daily Registered Member</h6>
+                  <h6 class="mb-10">Registered Member</h6>
                   <h3 class="text-bold mb-10">{{ $memberToday }}</h3>
                   <p class="text-sm text-success">
                     <span class="text-gray">Today</span>
@@ -374,7 +377,7 @@
                   <i class="lni lni-dollar"></i>
                 </div>
                 <div class="content">
-                  <h6 class="mb-10">Daily Registered Dependent</h6>
+                  <h6 class="mb-10">Registered Dependent</h6>
                   <h3 class="text-bold mb-10">{{ $dependentToday }}</h3>
                   <p class="text-sm text-success">
                     <span class="text-gray">Today</span>
@@ -421,13 +424,12 @@
           <div class="row">
               <div class="col-lg-12">
                 <div class="card-style mb-30">
-                  <h6 class="mb-10">Data Table</h6>
+                  <h6 class="mb-10">Notification</h6>
                   <p class="text-sm mb-20">
-                    For basic styling—light padding and only horizontal
-                    dividers—use the class table.
+                    List of all patient that are near its discharge counting.
                   </p>
                   <div class="table-wrapper table-responsive">
-                    <table class="table">
+                    <table class="table" id="example2">
                       <thead>
                         <tr>
                           <th class="lead-info">
@@ -630,9 +632,37 @@
                 </div>
                 <!-- end card -->
               </div>
+              <div class="col-lg-12">
+                <div class="card-style mb-30">
+                  <div class="title d-flex flex-wrap justify-content-between">
+                    <div class="left">
+                      <h6 class="text-medium mb-10">Patient Analysis Report</h6>
+                      <h3 class="text-bold primary">Increased</h3>
+                    </div>
+                    <div class="right">
+                      <div class="select-style-1">
+                        <div class="select-position select-sm">
+                          <select class="light-bg">
+                            <option value="">Yearly</option>
+                            <option value="">Monthly</option>
+                            <option value="">Weekly</option>
+                          </select>
+                        </div>
+                      </div>
+                      <!-- end select -->
+                    </div>
+                  </div>
+                  <!-- End Title -->
+                  <div class="chart">
+                    <canvas id="Chart1" style="width: 100%; height: 400px;"></canvas>
+                  </div>
+                  <!-- End Chart -->
+                </div>
+              </div>
               <!-- end col -->
             </div>
         </div>
+
         <!-- end container -->
       </section>
       <!-- ========== section end ========== -->
@@ -650,6 +680,7 @@
     <script src="{{ asset('assets/js/world-merc.js') }}"></script>
     <script src="{{ asset('assets/js/polyfill.js') }}"></script>
     <script src="{{ asset('assets/js/main.js') }}"></script>
+    <script src="{{ asset('assets/js/datatables.js') }}"></script>
 
 
     <script>
@@ -734,12 +765,12 @@
             {
               label: "",
               backgroundColor: "transparent",
-              borderColor: "#365CF5",
+              borderColor: "#065b34",
               data: [
                 600, 800, 750, 880, 940, 880, 900, 770, 920, 890, 976, 1100,
               ],
               pointBackgroundColor: "transparent",
-              pointHoverBackgroundColor: "#365CF5",
+              pointHoverBackgroundColor: "#065b34",
               pointBorderColor: "transparent",
               pointHoverBorderColor: "#fff",
               pointHoverBorderWidth: 5,

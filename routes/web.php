@@ -77,6 +77,10 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
     Route::post('/admin/patients/transmittal-form', [AdminPatientController::class, 'exportTransmittal'])
     ->name('patients.store.transmittal');
 
+    // Generate PMRF Form
+    Route::post('/admin/patients/pmrf/{health_record_id}', [AdminPatientController::class, 'generatePMRF'])->name('patients.pmrf');
+
+
 
     // ============== ACTION BUTTONS =================
     Route::delete('admin/patients/delete/{id}', [AdminPatientController::class, 'deletePatient'])->name('patients.delete');

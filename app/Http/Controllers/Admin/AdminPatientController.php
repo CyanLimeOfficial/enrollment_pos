@@ -17,10 +17,396 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DataTables;
+use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\Element\TextRun;
+use PhpOffice\PhpWord\Style\Font;
+
 
 class AdminPatientController extends Controller
 {
+    public function generatePMRF($health_record_id)
+    {
+        // Fetch patient with dependents
+        $patient = PosPatient::with('dependents')->findOrFail($health_record_id);
+    
+        // Load template
+        $templatePath = storage_path('app/templates/pmrf_template.docx');
+        $templateProcessor = new TemplateProcessor($templatePath);
+    
+        // Ensure PhilHealth ID is exactly 12 digits (pad with zeros if necessary)
+        $philhealth_id = str_pad($patient->philhealth_id, 12, '0', STR_PAD_LEFT);
 
+        // Convert the ID into an array of individual digits
+        $digits = str_split($philhealth_id);
+
+        // Chunk into groups of 4 and add spaces between each digit
+        $chunks = array_map(fn($chunk) => implode(' ', $chunk), array_chunk($digits, 4));
+
+        // Replace placeholders for the formatted PIN
+        $templateProcessor->setValue('pin_1', $chunks[0] ?? 'N/A');
+        $templateProcessor->setValue('pin_2', $chunks[1] ?? 'N/A');
+        $templateProcessor->setValue('pin_3', $chunks[2] ?? 'N/A');
+
+        // Determine the purpose and insert checkmark
+        $purpose = strtolower($patient->purpose ?? 'N/A');
+        $pur_1 = ($purpose === 'registration') ? '✔' : '';
+        $pur_2 = ($purpose === 'updating/amendment') ? '✔' : '';
+
+        // Replace placeholders in the template
+        $templateProcessor->setValue('pur_1', $pur_1);
+        $templateProcessor->setValue('pur_2', $pur_2);
+        // Get the provider_konsulta value
+        $providerKonsulta = $patient->provider_konsulta ?? '';
+
+        // Define character limits for font reduction
+        $fontSize = 12;  // Default size
+        $length = strlen($providerKonsulta);
+        
+        if ($length > 40) {
+            $fontSize = 10;
+        }
+        if ($length > 50) {
+            $fontSize = 8;
+        }
+        if ($length > 60) {
+            $fontSize = 6;  // Minimum size
+        }
+        
+        // Create a TextRun for rich text formatting
+        $textRun_provider_konsulta = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_provider_konsulta->addText($providerKonsulta, $fontStyle);
+
+        // Insert into the Word document with complex value
+        $templateProcessor->setComplexValue('provider_konsulta', $textRun_provider_konsulta);
+
+        // Member First Name
+        $memFirstName = $patient->member_first_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($memFirstName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_member_first_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_member_first_name->addText($memFirstName, $fontStyle);
+        $templateProcessor->setComplexValue('member_first_name', $textRun_member_first_name);
+
+        // Member Middle Name
+        $memMiddleName = $patient->member_middle_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($memMiddleName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_member_middle_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_member_middle_name->addText($memMiddleName, $fontStyle);
+        $templateProcessor->setComplexValue('member_middle_name', $textRun_member_middle_name);
+
+        // Member Last Name
+        $memLastName = $patient->member_last_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($memLastName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_member_last_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_member_last_name->addText($memLastName, $fontStyle);
+        $templateProcessor->setComplexValue('member_last_name', $textRun_member_last_name);
+
+        // Member Extension Name
+        $memExtensionName = $patient->member_extension_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($memExtensionName);
+        if ($length > 5) {
+            $fontSize = 10;
+        }
+        if ($length > 10) {
+            $fontSize = 8;
+        }
+        if ($length > 15) {
+            $fontSize = 6; // Minimum size
+        }
+        $textRun_member_extension_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_member_extension_name->addText($memExtensionName, $fontStyle);
+        $templateProcessor->setComplexValue('member_extension_name', $textRun_member_extension_name);
+
+        // Mother First Name
+        $motherFirstName = $patient->mother_first_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($motherFirstName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_mother_first_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_mother_first_name->addText($motherFirstName, $fontStyle);
+        $templateProcessor->setComplexValue('mother_first_name', $textRun_mother_first_name);
+
+        // Mother Middle Name
+        $motherMiddleName = $patient->mother_middle_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($motherMiddleName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_mother_middle_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_mother_middle_name->addText($motherMiddleName, $fontStyle);
+        $templateProcessor->setComplexValue('mother_middle_name', $textRun_mother_middle_name);
+
+        // Mother Last Name
+        $motherLastName = $patient->mother_last_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($motherLastName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_mother_last_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_mother_last_name->addText($motherLastName, $fontStyle);
+        $templateProcessor->setComplexValue('mother_last_name', $textRun_mother_last_name);
+
+        // Mother Extension Name
+        $motherExtensionName = $patient->mother_extension_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($motherExtensionName);
+        if ($length > 5) {
+            $fontSize = 10;
+        }
+        if ($length > 10) {
+            $fontSize = 8;
+        }
+        if ($length > 15) {
+            $fontSize = 6; // Minimum size
+        }
+        $textRun_mother_extension_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_mother_extension_name->addText($motherExtensionName, $fontStyle);
+        $templateProcessor->setComplexValue('mother_extension_name', $textRun_mother_extension_name);
+
+        // Spouse First Name
+        $spouseFirstName = $patient->spouse_first_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($spouseFirstName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_spouse_first_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_spouse_first_name->addText($spouseFirstName, $fontStyle);
+        $templateProcessor->setComplexValue('spouse_first_name', $textRun_spouse_first_name);
+
+        // Spouse Middle Name
+        $spouseMiddleName = $patient->spouse_middle_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($spouseMiddleName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_spouse_middle_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_spouse_middle_name->addText($spouseMiddleName, $fontStyle);
+        $templateProcessor->setComplexValue('spouse_middle_name', $textRun_spouse_middle_name);
+
+        // Spouse Last Name
+        $spouseLastName = $patient->spouse_last_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($spouseLastName);
+        if ($length > 20) {
+            $fontSize = 12;
+        }
+        if ($length > 30) {
+            $fontSize = 9;
+        }
+        if ($length > 40) {
+            $fontSize = 8; // Minimum size
+        }
+        $textRun_spouse_last_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_spouse_last_name->addText($spouseLastName, $fontStyle);
+        $templateProcessor->setComplexValue('spouse_last_name', $textRun_spouse_last_name);
+
+        // Spouse Extension Name
+        $spouseExtensionName = $patient->spouse_extension_name ?? '';
+        $fontSize = 12; // Default size
+        $length = strlen($spouseExtensionName);
+        if ($length > 5) {
+            $fontSize = 10;
+        }
+        if ($length > 10) {
+            $fontSize = 8;
+        }
+        if ($length > 15) {
+            $fontSize = 6; // Minimum size
+        }
+        $textRun_spouse_extension_name = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_spouse_extension_name->addText($spouseExtensionName, $fontStyle);
+        $templateProcessor->setComplexValue('spouse_extension_name', $textRun_spouse_extension_name);
+
+        // Member Mononym
+        if ($patient->member_mononym == 1) {
+            $templateProcessor->setValue('member_mononym', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('member_mononym', ''); // Leave empty
+        }
+
+        // Member Last Name
+        if (empty($patient->member_last_name)) {
+            $templateProcessor->setValue('no_member_last_name', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('no_member_last_name', ''); // Insert last name
+        }
+
+        // Mother Mononym
+        if ($patient->mother_mononym == 1) {
+            $templateProcessor->setValue('mother_mononym', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('mother_mononym', ''); // Leave empty
+        }
+
+        // Mother Last Name
+        if (empty($patient->mother_last_name)) {
+            $templateProcessor->setValue('mother_last_name', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('mother_last_name', $patient->mother_last_name); // Insert last name
+        }
+
+        // Spouse Mononym
+        if ($patient->spouse_mononym == 1) {
+            $templateProcessor->setValue('spouse_mononym', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('spouse_mononym', ''); // Leave empty
+        }
+
+        // Spouse Last Name
+        if (empty($patient->spouse_last_name)) {
+            $templateProcessor->setValue('spouse_last_name', '✓'); // Insert checkmark
+        } else {
+            $templateProcessor->setValue('spouse_last_name', $patient->spouse_last_name); // Insert last name
+        }
+
+
+
+        $templateProcessor->setValue('member_birthdate', $patient->date_of_birth->format('m/d/Y'));
+        $templateProcessor->setValue('member_philhealth_id', $patient->philhealth_id);
+        $templateProcessor->setValue('member_address', $patient->address);
+        $templateProcessor->setValue('member_contact_number', $patient->contact_number ?? 'N/A');
+        $templateProcessor->setValue('member_citizenship', $patient->citizenship);
+        $templateProcessor->setValue('member_sex', $patient->sex);
+        $templateProcessor->setValue('member_civil_status', $patient->civil_status);
+        
+        // Replace admission and discharge dates
+        $templateProcessor->setValue('admission_date', $patient->admission_date ? $patient->admission_date->format('m/d/Y') : 'N/A');
+        $templateProcessor->setValue('discharge_date', $patient->discharge_date ? $patient->discharge_date->format('m/d/Y') : 'N/A');
+    
+        // Replace reason/purpose and status
+        $templateProcessor->setValue('reason_or_purpose', $patient->reason_or_purpose ?? 'N/A');
+        $templateProcessor->setValue('status', $patient->status ?? 'N/A');
+    
+        // Handle dependents (Up to 4)
+        for ($i = 1; $i <= 4; $i++) {
+            if (isset($patient->dependents[$i - 1])) {
+                $dependent = $patient->dependents[$i - 1];
+                $templateProcessor->setValue("dependent_{$i}_first_name", $dependent->dependent_first_name ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_middle_name", $dependent->dependent_middle_name ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_last_name", $dependent->dependent_last_name ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_extension_name", $dependent->dependent_extension_name ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_relationship", $dependent->dependent_relationship ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_birthdate", $dependent->dependent_date_of_birth ? $dependent->dependent_date_of_birth->format('m/d/Y') : 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_philhealth_id", $dependent->philhealth_id_2 ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_admission_date", $dependent->admission_date_2 ? $dependent->admission_date_2->format('m/d/Y') : 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_discharge_date", $dependent->discharge_date_2 ? $dependent->discharge_date_2->format('m/d/Y') : 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_status", $dependent->status_2 ?? 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_reason_or_purpose", $dependent->reason_or_purpose2 ?? 'N/A');
+            } else {
+                // If no dependent available, set default values
+                $templateProcessor->setValue("dependent_{$i}_first_name", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_middle_name", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_last_name", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_extension_name", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_relationship", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_birthdate", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_philhealth_id", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_admission_date", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_discharge_date", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_status", 'N/A');
+                $templateProcessor->setValue("dependent_{$i}_reason_or_purpose", 'N/A');
+            }
+        }
+        
+        // Save generated document
+        $outputPath = storage_path("app/generated_docs/pmrf_{$health_record_id}.docx");
+        $templateProcessor->saveAs($outputPath);
+        
+        return response()->download($outputPath)->deleteFileAfterSend(true);
+    }
+    
     public function exportTransmittal(Request $request)
     {
         Log::info('Export Transmittal method started.');
