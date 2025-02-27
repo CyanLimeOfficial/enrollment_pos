@@ -51,3 +51,15 @@ A modern and efficient Point-of-Sale (POS) system designed specifically for Phil
 ## Reports
 - **Status:** Under consultation
 - **Notes:** Final requirements and design for report generation are being reviewed.
+
+
+## Front-end Validation
+- **Status:** Will be done by next week.
+- **Notes:** Patients assigned on a certain record should not be duplicated, if duplicated is existed, the system will remind the user for confirmation of add
+- **Notes:** Reports
+- **Notes:** Final requirements and design for report generation are being reviewed.
+- **Notes:** Final requirements and design for report generation are being reviewed.
+
+
+- **UPDATE:** PMRF Form is working, thoo revisions is advice depends on the dry run result.
+

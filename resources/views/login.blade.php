@@ -51,10 +51,9 @@
             <div class="col-lg-6">
               <div class="signin-wrapper bg-secondary-100">
                 <div class="form-wrapper">
-                  <h6 class="mb-15">Login Form</h6>
+                  <h5 class="mb-15">Login Form</h5>
                   <p class="text-sm mb-25">
-                    Start creating the best possible user experience for your
-                    customers.
+                    Log In, Care On
                   </p>
                   <form method="POST" action="{{ route('login') }}">
                     @csrf

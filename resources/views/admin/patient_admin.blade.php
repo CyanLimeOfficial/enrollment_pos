@@ -2080,7 +2080,7 @@
                                                     <label for="citizenship">Citizenship</label>
                                                     <select id="citizenship" name="citizenship" class="form-control"
                                                         required>
-                                                        <option value="Filipino">Filipino</option>
+                                                        <option selected value="Filipino">Filipino</option>
                                                         <option value="Foreign National">Foreign National</option>
                                                         <option value="Dual Citizen">Dual Citizen</option>
                                                     </select>
@@ -2089,7 +2089,7 @@
 
                                                 <!-- Philsys ID Number -->
                                                 <div class="mb-3">
-                                                    <label for="philsys_id">Philsys ID Number (Optional)</label>
+                                                    <label for="philsys_id">Philsys ID Number (Optional) <span style="color:gray">(eg. 1234-5678-9012)</span></label>
                                                     <input type="text" class="form-control" id="philsys_id"
                                                         name="philsys_id">
                                                 </div>

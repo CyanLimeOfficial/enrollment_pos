@@ -19,6 +19,7 @@ class CreatePosPatientsDependantsTable extends Migration
             $table->string('dependent_last_name')->nullable();
             $table->string('dependent_extension_name')->nullable();
             $table->string('dependent_relationship')->nullable();
+            $table->dateTime('dependent_citizenship')->nullable();
             $table->dateTime('dependent_date_of_birth')->nullable();
             $table->boolean('dependent_mononym')->nullable();
             $table->boolean('permanent_disability')->nullable();

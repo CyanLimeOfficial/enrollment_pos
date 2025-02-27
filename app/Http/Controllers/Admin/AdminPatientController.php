@@ -28,6 +28,10 @@ class AdminPatientController extends Controller
     {
         // Fetch patient with dependents
         $patient = PosPatient::with('dependents')->findOrFail($health_record_id);
+        // You can use the DB facade; ensure you have imported use Illuminate\Support\Facades\DB;
+        $memberUpdate = DB::table('pos_patient_member_update_amendment')
+        ->where('health_record_id', $health_record_id)
+        ->first();
     
         // Load template
         $templatePath = storage_path('app/templates/pmrf_template.docx');
@@ -43,12 +47,12 @@ class AdminPatientController extends Controller
         $chunks = array_map(fn($chunk) => implode(' ', $chunk), array_chunk($digits, 4));
 
         // Replace placeholders for the formatted PIN
-        $templateProcessor->setValue('pin_1', $chunks[0] ?? 'N/A');
-        $templateProcessor->setValue('pin_2', $chunks[1] ?? 'N/A');
-        $templateProcessor->setValue('pin_3', $chunks[2] ?? 'N/A');
+        $templateProcessor->setValue('pin_1', $chunks[0] ?? '');
+        $templateProcessor->setValue('pin_2', $chunks[1] ?? '');
+        $templateProcessor->setValue('pin_3', $chunks[2] ?? '');
 
         // Determine the purpose and insert checkmark
-        $purpose = strtolower($patient->purpose ?? 'N/A');
+        $purpose = strtolower($patient->purpose ?? '');
         $pur_1 = ($purpose === 'registration') ? '✔' : '';
         $pur_2 = ($purpose === 'updating/amendment') ? '✔' : '';
 
@@ -56,7 +60,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setValue('pur_1', $pur_1);
         $templateProcessor->setValue('pur_2', $pur_2);
         // Get the provider_konsulta value
-        $providerKonsulta = $patient->provider_konsulta ?? '';
+        $providerKonsulta = strtoupper($patient->provider_konsulta ?? '');
 
         // Define character limits for font reduction
         $fontSize = 12;  // Default size
@@ -82,7 +86,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('provider_konsulta', $textRun_provider_konsulta);
 
         // Member First Name
-        $memFirstName = $patient->member_first_name ?? '';
+        $memFirstName = strtoupper($patient->member_first_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($memFirstName);
         if ($length > 20) {
@@ -101,7 +105,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('member_first_name', $textRun_member_first_name);
 
         // Member Middle Name
-        $memMiddleName = $patient->member_middle_name ?? '';
+        $memMiddleName = strtoupper($patient->member_middle_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($memMiddleName);
         if ($length > 20) {
@@ -120,7 +124,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('member_middle_name', $textRun_member_middle_name);
 
         // Member Last Name
-        $memLastName = $patient->member_last_name ?? '';
+        $memLastName = strtoupper($patient->member_last_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($memLastName);
         if ($length > 20) {
@@ -158,7 +162,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('member_extension_name', $textRun_member_extension_name);
 
         // Mother First Name
-        $motherFirstName = $patient->mother_first_name ?? '';
+        $motherFirstName = strtoupper($patient->mother_first_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($motherFirstName);
         if ($length > 20) {
@@ -177,7 +181,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('mother_first_name', $textRun_mother_first_name);
 
         // Mother Middle Name
-        $motherMiddleName = $patient->mother_middle_name ?? '';
+        $motherMiddleName = strtoupper($patient->mother_middle_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($motherMiddleName);
         if ($length > 20) {
@@ -196,7 +200,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('mother_middle_name', $textRun_mother_middle_name);
 
         // Mother Last Name
-        $motherLastName = $patient->mother_last_name ?? '';
+        $motherLastName = strtoupper($patient->mother_last_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($motherLastName);
         if ($length > 20) {
@@ -234,7 +238,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('mother_extension_name', $textRun_mother_extension_name);
 
         // Spouse First Name
-        $spouseFirstName = $patient->spouse_first_name ?? '';
+        $spouseFirstName = strtoupper($patient->spouse_first_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($spouseFirstName);
         if ($length > 20) {
@@ -253,7 +257,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('spouse_first_name', $textRun_spouse_first_name);
 
         // Spouse Middle Name
-        $spouseMiddleName = $patient->spouse_middle_name ?? '';
+        $spouseMiddleName = strtoupper($patient->spouse_middle_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($spouseMiddleName);
         if ($length > 20) {
@@ -272,7 +276,7 @@ class AdminPatientController extends Controller
         $templateProcessor->setComplexValue('spouse_middle_name', $textRun_spouse_middle_name);
 
         // Spouse Last Name
-        $spouseLastName = $patient->spouse_last_name ?? '';
+        $spouseLastName = strtoupper($patient->spouse_last_name ?? '');
         $fontSize = 12; // Default size
         $length = strlen($spouseLastName);
         if ($length > 20) {
@@ -308,7 +312,7 @@ class AdminPatientController extends Controller
         $fontStyle->setSize($fontSize);
         $textRun_spouse_extension_name->addText($spouseExtensionName, $fontStyle);
         $templateProcessor->setComplexValue('spouse_extension_name', $textRun_spouse_extension_name);
-
+        // ---------------------------------------------------------------------------------------
         // Member Mononym
         if ($patient->member_mononym == 1) {
             $templateProcessor->setValue('member_mononym', '✓'); // Insert checkmark
@@ -316,11 +320,11 @@ class AdminPatientController extends Controller
             $templateProcessor->setValue('member_mononym', ''); // Leave empty
         }
 
-        // Member Last Name
-        if (empty($patient->member_last_name)) {
-            $templateProcessor->setValue('no_member_last_name', '✓'); // Insert checkmark
+        // Member middle Name
+        if (empty($patient->member_middle_name)) {
+            $templateProcessor->setValue('no_member_middle_name', '✓'); // Insert checkmark
         } else {
-            $templateProcessor->setValue('no_member_last_name', ''); // Insert last name
+            $templateProcessor->setValue('no_member_middle_name', ''); // Insert middle name
         }
 
         // Mother Mononym
@@ -330,11 +334,11 @@ class AdminPatientController extends Controller
             $templateProcessor->setValue('mother_mononym', ''); // Leave empty
         }
 
-        // Mother Last Name
-        if (empty($patient->mother_last_name)) {
-            $templateProcessor->setValue('mother_last_name', '✓'); // Insert checkmark
+        // Mother middle Name
+        if (empty($patient->mother_middle_name)) {
+            $templateProcessor->setValue('no_mother_middle_name', '✓'); // Insert checkmark
         } else {
-            $templateProcessor->setValue('mother_last_name', $patient->mother_last_name); // Insert last name
+            $templateProcessor->setValue('no_mother_middle_name', ''); // Insert middle name
         }
 
         // Spouse Mononym
@@ -344,62 +348,485 @@ class AdminPatientController extends Controller
             $templateProcessor->setValue('spouse_mononym', ''); // Leave empty
         }
 
-        // Spouse Last Name
-        if (empty($patient->spouse_last_name)) {
-            $templateProcessor->setValue('spouse_last_name', '✓'); // Insert checkmark
+        // Spouse middle Name
+        if (empty($patient->spouse_middle_name)) {
+            $templateProcessor->setValue('no_spouse_middle_name', '✓'); // Insert checkmark
         } else {
-            $templateProcessor->setValue('spouse_last_name', $patient->spouse_last_name); // Insert last name
+            $templateProcessor->setValue('no_spouse_middle_name', ''); // Insert middle name
         }
 
+        // ---------------------------------------------------------------------------------------------
 
+        // Member Place of Birth
+        $member_place_of_birth = strtoupper($patient->place_of_birth ?? '');
+        $fontSize = 8; // Default size
+        $length = strlen($member_place_of_birth);
+        if ($length > 80) {
+            $fontSize = 7;
+        }
+        if ($length > 120) {
+            $fontSize = 6; // Minimum size
+        }
+        $textRun_member_place_of_birth = new TextRun();
+        $fontStyle = new Font();
+        $fontStyle->setSize($fontSize);
+        $textRun_member_place_of_birth->addText($member_place_of_birth, $fontStyle);
+        $templateProcessor->setComplexValue('member_place_of_birth', $textRun_member_place_of_birth);
 
-        $templateProcessor->setValue('member_birthdate', $patient->date_of_birth->format('m/d/Y'));
-        $templateProcessor->setValue('member_philhealth_id', $patient->philhealth_id);
-        $templateProcessor->setValue('member_address', $patient->address);
-        $templateProcessor->setValue('member_contact_number', $patient->contact_number ?? 'N/A');
-        $templateProcessor->setValue('member_citizenship', $patient->citizenship);
-        $templateProcessor->setValue('member_sex', $patient->sex);
-        $templateProcessor->setValue('member_civil_status', $patient->civil_status);
+        // Extract month, day, and year from the birthdate
+        $birthMonth = $patient->date_of_birth->format('m');
+        $birthDay   = $patient->date_of_birth->format('d');
+        $birthYear  = $patient->date_of_birth->format('Y');
+                // Insert spaces between each digit using str_split and implode
+        $birthMonthSpaced = implode(' ', str_split($birthMonth)); // "0 5"
+        $birthDaySpaced   = implode(' ', str_split($birthDay));   // "2 3"
+        $birthYearSpaced  = implode(' ', str_split($birthYear));  // "2 0 2 5"
+
+        // Assign each to the respective placeholder in the Word document
+        $templateProcessor->setValue('member_birth_month', $birthMonthSpaced);
+        $templateProcessor->setValue('member_birth_day', $birthDaySpaced);
+        $templateProcessor->setValue('member_birth_year', $birthYearSpaced);
+
+        // S*x Checks
+        if ($patient->sex == 'Male') {
+            $templateProcessor->setValue('member_sex_m', '✓'); // Insert checkmark
+            $templateProcessor->setValue('member_sex_f', ''); // Leave empty
+        } 
+        elseif ($patient->sex == 'Female') {
+            $templateProcessor->setValue('member_sex_f', '✓'); // Insert checkmark
+            $templateProcessor->setValue('member_sex_m', ''); // Leave empty
+        } else {
+            $templateProcessor->setValue('member_sex_m', ''); // Leave empty
+            $templateProcessor->setValue('member_sex_f', ''); // Leave empty
+        }
+
+                // Civil Status Checks
+        if ($patient->civil_status == 'Single') {
+            $templateProcessor->setValue('member_civil_status_single', '✓');
+            $templateProcessor->setValue('member_civil_status_married', '');
+            $templateProcessor->setValue('member_civil_status_annulled', '');
+            $templateProcessor->setValue('member_civil_status_widower', '');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '');
+        } elseif ($patient->civil_status == 'Married') {
+            $templateProcessor->setValue('member_civil_status_single', '');
+            $templateProcessor->setValue('member_civil_status_married', '✓');
+            $templateProcessor->setValue('member_civil_status_annulled', '');
+            $templateProcessor->setValue('member_civil_status_widower', '');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '');
+        } elseif ($patient->civil_status == 'Annulled') {
+            $templateProcessor->setValue('member_civil_status_single', '');
+            $templateProcessor->setValue('member_civil_status_married', '');
+            $templateProcessor->setValue('member_civil_status_annulled', '✓');
+            $templateProcessor->setValue('member_civil_status_widower', '');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '');
+        } elseif ($patient->civil_status == 'Widower') {
+            $templateProcessor->setValue('member_civil_status_single', '');
+            $templateProcessor->setValue('member_civil_status_married', '');
+            $templateProcessor->setValue('member_civil_status_annulled', '');
+            $templateProcessor->setValue('member_civil_status_widower', '✓');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '');
+        } elseif ($patient->civil_status == 'Legally Separated') {
+            $templateProcessor->setValue('member_civil_status_single', '');
+            $templateProcessor->setValue('member_civil_status_married', '');
+            $templateProcessor->setValue('member_civil_status_annulled', '');
+            $templateProcessor->setValue('member_civil_status_widower', '');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '✓');
+        } else {
+            // If no valid civil status is provided, set all as empty
+            $templateProcessor->setValue('member_civil_status_single', '');
+            $templateProcessor->setValue('member_civil_status_married', '');
+            $templateProcessor->setValue('member_civil_status_annulled', '');
+            $templateProcessor->setValue('member_civil_status_widower', '');
+            $templateProcessor->setValue('member_civil_status_legally_separated', '');
+        }
+
+        if ($patient->citizenship == 'Filipino') {
+            $templateProcessor->setValue('member_citizenship_filipino', '✓');
+            $templateProcessor->setValue('member_citizenship_foreign_national', '');
+            $templateProcessor->setValue('member_citizenship_dual_citizen', '');
+        } elseif ($patient->citizenship == 'Foreign National') {
+            $templateProcessor->setValue('member_citizenship_filipino', '');
+            $templateProcessor->setValue('member_citizenship_foreign_national', '✓');
+            $templateProcessor->setValue('member_citizenship_dual_citizen', '');
+        } elseif ($patient->citizenship == 'Dual Citizen') {
+            $templateProcessor->setValue('member_citizenship_filipino', '');
+            $templateProcessor->setValue('member_citizenship_foreign_national', '');
+            $templateProcessor->setValue('member_citizenship_dual_citizen', '✓');
+        } else {
+            // If citizenship doesn't match any option, leave all blank.
+            $templateProcessor->setValue('member_citizenship_filipino', '');
+            $templateProcessor->setValue('member_citizenship_foreign_national', '');
+            $templateProcessor->setValue('member_citizenship_dual_citizen', '');
+        }
+
+        // Original philsys_id from the patient record
+        $philsysID = $patient->philsys_id;
+
+        // Remove the dashes
+        $cleanedPhilsysID = str_replace('-', '', $philsysID); // Result: "556887647786"
+
+        // Split the cleaned ID into individual digits
+        $digits = str_split($cleanedPhilsysID); // Array: ['5','5','6','8','8','7','6','4','7','7','8','6']
+
+        // Chunk the array into three groups of 4 digits each
+        $chunks = array_chunk($digits, 4);
+
+        // Implode each chunk with a space between each digit
+        $philsysPart1 = implode(' ', $chunks[0]); // "5 5 6 8"
+        $philsysPart2 = implode(' ', $chunks[1]); // "8 7 6 4"
+        $philsysPart3 = implode(' ', $chunks[2]); // "7 7 8 6"
+
+        // Assign these values to the DOCX template placeholders
+        $templateProcessor->setValue('member_philsys_id_part1', $philsysPart1);
+        $templateProcessor->setValue('member_philsys_id_part2', $philsysPart2);
+        $templateProcessor->setValue('member_philsys_id_part3', $philsysPart3);
+
+        // Original tax_payer_id from the patient record, e.g. "123-456-789"
+        $taxPayerId = $patient->tax_payer_id; 
+
+        // Remove the dashes
+        $cleanedTaxPayerId = str_replace('-', '', $taxPayerId); // Result: "123456789"
+
+        // Split the cleaned ID into individual digits
+        $digits = str_split($cleanedTaxPayerId); // Array: ['1','2','3','4','5','6','7','8','9']
+
+        // Chunk the array into three groups of 3 digits each
+        $chunks = array_chunk($digits, 3);
+
+        // Implode each chunk with a space between each digit
+        $taxPayerPart1 = implode(' ', $chunks[0]); // "1 2 3"
+        $taxPayerPart2 = implode(' ', $chunks[1]); // "4 5 6"
+        $taxPayerPart3 = implode(' ', $chunks[2]); // "7 8 9"
+
+        // Assign these values to the DOCX template placeholders
+        $templateProcessor->setValue('member_tax_payer_id_part1', $taxPayerPart1);
+        $templateProcessor->setValue('member_tax_payer_id_part2', $taxPayerPart2);
+        $templateProcessor->setValue('member_tax_payer_id_part3', $taxPayerPart3);
         
-        // Replace admission and discharge dates
-        $templateProcessor->setValue('admission_date', $patient->admission_date ? $patient->admission_date->format('m/d/Y') : 'N/A');
-        $templateProcessor->setValue('discharge_date', $patient->discharge_date ? $patient->discharge_date->format('m/d/Y') : 'N/A');
-    
-        // Replace reason/purpose and status
-        $templateProcessor->setValue('reason_or_purpose', $patient->reason_or_purpose ?? 'N/A');
-        $templateProcessor->setValue('status', $patient->status ?? 'N/A');
-    
-        // Handle dependents (Up to 4)
+        // Process patient's address to wrap text at 65 characters without breaking words
+        $originalAddress = strtoupper($patient->address); // Assuming address is not null
+        $maxLength = 67; // Maximum characters per line
+        $wrappedAddress = '';
+        $currentLine = '';
+
+        $words = explode(' ', $originalAddress);
+
+        foreach ($words as $word) {
+            // If the current line is empty, add the word regardless of its length.
+            if ($currentLine === '') {
+                $currentLine = $word;
+            } else {
+                // Check if appending this word (with a space) exceeds the max length
+                if (strlen($currentLine . ' ' . $word) <= $maxLength) {
+                    $currentLine .= ' ' . $word;
+                } else {
+                    // Add the current line to the wrapped address and start a new line with the word.
+                    $wrappedAddress .= $currentLine . "\n\n";
+                    $currentLine = $word;
+                }
+            }
+        }
+
+        // Append any remaining text in the current line
+        if ($currentLine !== '') {
+            $wrappedAddress .= $currentLine;
+        }
+        // Now assign the wrapped address to your template placeholder
+        $templateProcessor->setValue('member_address', $wrappedAddress);
+
+        // Process patient's mailing address
+        if (trim($patient->mailing_address) === trim($patient->address)) {
+            // If mailing_address is identical to address, set a checkmark in the placeholder
+            $templateProcessor->setValue('mailing_address_same_check', '✓');
+            // Optionally, you can leave the mailing_address field blank or copy the wrapped address
+            $templateProcessor->setValue('mailing_address', '');
+        } else {
+            // Process mailing_address similar to above
+            $originalMailingAddress = strtoupper($patient->mailing_address); // Assuming mailing_address is not null
+            $maxLength = 67; // Maximum characters per line
+            $wrappedMailingAddress = '';
+            $currentLine = '';
+
+            $words = explode(' ', $originalMailingAddress);
+
+            foreach ($words as $word) {
+                if ($currentLine === '') {
+                    $currentLine = $word;
+                } else {
+                    if (strlen($currentLine . ' ' . $word) <= $maxLength) {
+                        $currentLine .= ' ' . $word;
+                    } else {
+                        $wrappedMailingAddress .= $currentLine . "\n\n";
+                        $currentLine = $word;
+                    }
+                }
+            }
+
+            if ($currentLine !== '') {
+                $wrappedMailingAddress .= $currentLine;
+            }
+
+            // Set the processed mailing address and clear the checkmark
+            $templateProcessor->setValue('mailing_address', $wrappedMailingAddress);
+            $templateProcessor->setValue('mailing_address_same_check', '');
+        }
+
+        $templateProcessor->setValue('contact_number', $patient->contact_number);
+        $templateProcessor->setValue('home_phone_number', $patient->home_phone_number);
+        $templateProcessor->setValue('business_direct_line', $patient->business_direct_line);
+        $templateProcessor->setValue('email_address', $patient->email_address);
+
+        // Handle dependents (Up to 4) with exactly the specified fields
         for ($i = 1; $i <= 4; $i++) {
             if (isset($patient->dependents[$i - 1])) {
                 $dependent = $patient->dependents[$i - 1];
-                $templateProcessor->setValue("dependent_{$i}_first_name", $dependent->dependent_first_name ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_middle_name", $dependent->dependent_middle_name ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_last_name", $dependent->dependent_last_name ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_extension_name", $dependent->dependent_extension_name ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_relationship", $dependent->dependent_relationship ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_birthdate", $dependent->dependent_date_of_birth ? $dependent->dependent_date_of_birth->format('m/d/Y') : 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_philhealth_id", $dependent->philhealth_id_2 ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_admission_date", $dependent->admission_date_2 ? $dependent->admission_date_2->format('m/d/Y') : 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_discharge_date", $dependent->discharge_date_2 ? $dependent->discharge_date_2->format('m/d/Y') : 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_status", $dependent->status_2 ?? 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_reason_or_purpose", $dependent->reason_or_purpose2 ?? 'N/A');
+                
+                // -------------------------
+                // Dependent Last Name (Dynamic)
+                // -------------------------
+                $depLastName = strtoupper($dependent->dependent_last_name ?? '');
+                $fontSize = 12; // Default size
+                $length = strlen($depLastName);
+                if ($length > 20) {
+                    $fontSize = 12;
+                }
+                if ($length > 30) {
+                    $fontSize = 9;
+                }
+                if ($length > 40) {
+                    $fontSize = 8; // Minimum size
+                }
+                $textRun_dep_last = new TextRun();
+                $fontStyle = new Font();
+                $fontStyle->setSize($fontSize);
+                $textRun_dep_last->addText($depLastName, $fontStyle);
+                $templateProcessor->setComplexValue("dependent_{$i}_last_name", $textRun_dep_last);
+
+                // -------------------------
+                // Dependent First Name (Dynamic)
+                // -------------------------
+                $depFirstName = strtoupper($dependent->dependent_first_name ?? '');
+                $fontSize = 12; // Default size
+                $length = strlen($depFirstName);
+                if ($length > 20) {
+                    $fontSize = 12;
+                }
+                if ($length > 30) {
+                    $fontSize = 9;
+                }
+                if ($length > 40) {
+                    $fontSize = 8; // Minimum size
+                }
+                $textRun_dep_first = new TextRun();
+                $fontStyle = new Font();
+                $fontStyle->setSize($fontSize);
+                $textRun_dep_first->addText($depFirstName, $fontStyle);
+                $templateProcessor->setComplexValue("dependent_{$i}_first_name", $textRun_dep_first);
+
+                // -------------------------
+                // Dependent Middle Name (Dynamic)
+                // -------------------------
+                // If no middle name is provided, leave blank.
+                $depMiddleName = strtoupper($dependent->dependent_middle_name ?? '');
+                $fontSize = 12; // Default size
+                $length = strlen($depMiddleName);
+                if ($length > 20) {
+                    $fontSize = 12;
+                }
+                if ($length > 30) {
+                    $fontSize = 9;
+                }
+                if ($length > 40) {
+                    $fontSize = 8; // Minimum size
+                }
+                $textRun_dep_middle = new TextRun();
+                $fontStyle = new Font();
+                $fontStyle->setSize($fontSize);
+                $textRun_dep_middle->addText($depMiddleName, $fontStyle);
+                $templateProcessor->setComplexValue("dependent_{$i}_middle_name", $textRun_dep_middle);
+
+                // -------------------------
+                // Other Dependent Fields (Static)
+                // -------------------------
+                
+                // Name Extension
+                $templateProcessor->setValue("dependent_{$i}_extension_name", $dependent->dependent_extension_name ?? '');
+                
+                // Relationship
+                $templateProcessor->setValue("dependent_{$i}_relationship", strtoupper($dependent->dependent_relationship ?? ''));
+                
+                // Date of Birth in format mm-dd-yyyy
+                $birthdate = $dependent->dependent_date_of_birth 
+                    ? \Carbon\Carbon::parse($dependent->dependent_date_of_birth)->format('m-d-Y') 
+                    : '';
+                $templateProcessor->setValue("dependent_{$i}_birthdate", $birthdate);
+                
+                // Citizenship
+                $templateProcessor->setValue("dependent_{$i}_citizenship", strtoupper($dependent->dependent_citizenship ?? ''));
+                
+                // Mononym: if value is not null and true (1) then '✓', otherwise blank
+                $templateProcessor->setValue("dependent_{$i}_mononym", 
+                    (!is_null($dependent->dependent_mononym) && $dependent->dependent_mononym == 1) ? '✓' : ''
+                );
+                
+                // Permanent Disability: if value is not null and true (1) then '✓', otherwise blank
+                $templateProcessor->setValue("dependent_{$i}_permanent_disability", 
+                    (!is_null($dependent->permanent_disability) && $dependent->permanent_disability == 1) ? '✓' : ''
+                );
+
+                // Check for "no dependent middle name": if the middle name is empty, insert a checkmark; otherwise, leave blank.
+                $templateProcessor->setValue("no_dependent_{$i}_middle_name", empty($dependent->dependent_middle_name) ? '✓' : '');
             } else {
-                // If no dependent available, set default values
-                $templateProcessor->setValue("dependent_{$i}_first_name", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_middle_name", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_last_name", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_extension_name", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_relationship", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_birthdate", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_philhealth_id", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_admission_date", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_discharge_date", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_status", 'N/A');
-                $templateProcessor->setValue("dependent_{$i}_reason_or_purpose", 'N/A');
+                // If no dependent is available, set all placeholders to default (blank) values
+                $templateProcessor->setValue("dependent_{$i}_last_name", '');
+                $templateProcessor->setValue("dependent_{$i}_first_name", '');
+                $templateProcessor->setValue("dependent_{$i}_extension_name", '');
+                $templateProcessor->setValue("dependent_{$i}_middle_name", '');
+                $templateProcessor->setValue("dependent_{$i}_relationship", '');
+                $templateProcessor->setValue("dependent_{$i}_birthdate", '');
+                $templateProcessor->setValue("dependent_{$i}_citizenship", '');
+                $templateProcessor->setValue("dependent_{$i}_mononym", '');
+                $templateProcessor->setValue("dependent_{$i}_permanent_disability", '');
+                $templateProcessor->setValue("no_dependent_{$i}_middle_name", '');
             }
         }
+
+        if ($memberUpdate) {
+            $templateProcessor->setValue('employed_private', ($memberUpdate->employed_private) ? '✓' : '');
+            $templateProcessor->setValue('employed_government', ($memberUpdate->employed_government) ? '✓' : '');
+            $templateProcessor->setValue('professional_practitioner', ($memberUpdate->professional_practitioner) ? '✓' : '');
+
+            $templateProcessor->setValue('individual', ($memberUpdate->individual) ? '✓' : '');
+            $templateProcessor->setValue('sole_proprietor', ($memberUpdate->sole_proprietor) ? '✓' : '');
+            $templateProcessor->setValue('group_enrollment_scheme', $memberUpdate->group_enrollment_scheme ?? '');
+            $groupEnrollmentCheck = !empty($memberUpdate->group_enrollment_scheme) ? '✓' : '';
+            $templateProcessor->setValue('group_enrollment_scheme_check', $groupEnrollmentCheck);
+                $selfEarningIndividual = ($memberUpdate->individual || $memberUpdate->sole_proprietor || !empty($memberUpdate->group_enrollment_scheme)) ? '✓' : '';
+                $templateProcessor->setValue('self_earning_individual', $selfEarningIndividual);
+
+            $templateProcessor->setValue('kasambahay', ($memberUpdate->kasambahay) ? '✓' : '');
+
+            $templateProcessor->setValue('migrant_worker_land_based', ($memberUpdate->migrant_worker_land_based) ? '✓' : '');
+                $templateProcessor->setValue('migrant_worker_sea_based', ($memberUpdate->migrant_worker_sea_based) ? '✓' : '');
+                $migrant_worker = (($memberUpdate->migrant_worker_land_based) || ($memberUpdate->migrant_worker_sea_based)) ? '✓' : '';
+            $templateProcessor->setValue('migrant_worker', $migrant_worker);
+            $templateProcessor->setValue('lifetime_member', ($memberUpdate->lifetime_member) ? '✓' : '');
+            $templateProcessor->setValue('filipinos_with_dual_citizenship_living_abroad', ($memberUpdate->filipinos_with_dual_citizenship_living_abroad) ? '✓' : '');
+            $templateProcessor->setValue('foreign_national', ($memberUpdate->foreign_national) ? '✓' : '');
+            $templateProcessor->setValue('pra_srrv_no', $memberUpdate->pra_srrv_no ?? '');
+            $templateProcessor->setValue('acr_i_card_no', $memberUpdate->acr_i_card_no ?? '');
+            $templateProcessor->setValue('family_driver', ($memberUpdate->family_driver) ? '✓' : '');
+            
+            $templateProcessor->setValue('profession', strtoupper($memberUpdate->profession ?? ''));
+            $templateProcessor->setValue('monthly_income', $memberUpdate->monthly_income ?? '');
+            $templateProcessor->setValue('proof_of_income', $memberUpdate->proof_of_income ?? '');
+            
+            $templateProcessor->setValue('listahanan', ($memberUpdate->listahanan) ? '✓' : '');
+            $templateProcessor->setValue('four_ps_mcct', ($memberUpdate->four_ps_mcct) ? '✓' : '');
+            $templateProcessor->setValue('senior_citizen', ($memberUpdate->senior_citizen) ? '✓' : '');
+            $templateProcessor->setValue('pamana', ($memberUpdate->pamana) ? '✓' : '');
+            $templateProcessor->setValue('kia_kipo', ($memberUpdate->kia_kipo) ? '✓' : '');
+            $templateProcessor->setValue('lgu_sponsored', ($memberUpdate->lgu_sponsored) ? '✓' : '');
+            $templateProcessor->setValue('nga_sponsored_private_sponsored', ($memberUpdate->nga_sponsored_private_sponsored) ? '✓' : '');
+            $templateProcessor->setValue('person_with_disability', ($memberUpdate->person_with_disability) ? '✓' : '');
+            $templateProcessor->setValue('pwd_id_no', $memberUpdate->pwd_id_no ?? '');
+            $templateProcessor->setValue('bangsamoro_normalization', ($memberUpdate->bangsamoro_normalization) ? '✓' : '');
+            
+            $templateProcessor->setValue('pos_financially_incapable', ($memberUpdate->pos_financially_incapable) ? '✓' : '');
+            $templateProcessor->setValue('financially_incapable', ($memberUpdate->financially_incapable) ? '✓' : '');
+            
+            $templateProcessor->setValue('from_correction_name', strtoupper($memberUpdate->from_correction_name ?? ''));
+            $templateProcessor->setValue('from_correction_birth', strtoupper($memberUpdate->from_correction_birth ?? ''));
+            $templateProcessor->setValue('from_correction_sex', strtoupper($memberUpdate->from_correction_sex ?? ''));
+            $templateProcessor->setValue('from_correction_civil_status', strtoupper($memberUpdate->from_correction_civil_status ?? ''));
+            $templateProcessor->setValue('from_update_general', strtoupper($memberUpdate->from_update_general ?? ''));
+            $templateProcessor->setValue('to_correction_name', strtoupper($memberUpdate->to_correction_name ?? ''));
+            $templateProcessor->setValue('to_correction_birth', strtoupper($memberUpdate->to_correction_birth ?? ''));
+            $templateProcessor->setValue('to_correction_sex', strtoupper($memberUpdate->to_correction_sex ?? ''));
+            $templateProcessor->setValue('to_correction_civil_status', strtoupper($memberUpdate->to_correction_civil_status ?? ''));
+            $templateProcessor->setValue('to_update_general', strtoupper($memberUpdate->to_update_general ?? ''));            
+
+            // Now, create new variables for each category if both "from" and "to" exist
+            $correctionNameStatus = (!empty($memberUpdate->from_correction_name) && !empty($memberUpdate->to_correction_name)) ? '✓' : '';
+            $correctionBirthStatus = (!empty($memberUpdate->from_correction_birth) && !empty($memberUpdate->to_correction_birth)) ? '✓' : '';
+            $correctionSexStatus = (!empty($memberUpdate->from_correction_sex) && !empty($memberUpdate->to_correction_sex)) ? '✓' : '';
+            $correctionCivilStatusStatus = (!empty($memberUpdate->from_correction_civil_status) && !empty($memberUpdate->to_correction_civil_status)) ? '✓' : '';
+            $updateGeneralStatus = (!empty($memberUpdate->from_update_general) && !empty($memberUpdate->to_update_general)) ? '✓' : '';
+
+            // Replace the placeholders for these new status variables in your template:
+            $templateProcessor->setValue('correction_name_status', $correctionNameStatus);
+            $templateProcessor->setValue('correction_birth_status', $correctionBirthStatus);
+            $templateProcessor->setValue('correction_sex_status', $correctionSexStatus);
+            $templateProcessor->setValue('correction_civil_status_status', $correctionCivilStatusStatus);
+            $templateProcessor->setValue('update_general_status', $updateGeneralStatus);
+        } else {
+            // If no record exists in member_update, set all placeholders to blank.
+            $templateProcessor->setValue('employed_private', '');
+            $templateProcessor->setValue('employed_government', '');
+            $templateProcessor->setValue('professional_practitioner', '');
+            $templateProcessor->setValue('self_earning_individual', '');
+            $templateProcessor->setValue('individual', '');
+            $templateProcessor->setValue('sole_proprietor', '');
+            $templateProcessor->setValue('group_enrollment_scheme', '');
+            $templateProcessor->setValue('kasambahay', '');
+            $templateProcessor->setValue('migrant_worker_land_based', '');
+            $templateProcessor->setValue('migrant_worker_sea_based', '');
+            $templateProcessor->setValue('lifetime_member', '');
+            $templateProcessor->setValue('filipinos_with_dual_citizenship_living_abroad', '');
+            $templateProcessor->setValue('foreign_national', '');
+            $templateProcessor->setValue('pra_srrv_no', '');
+            $templateProcessor->setValue('acr_i_card_no', '');
+            $templateProcessor->setValue('family_driver', '');
+            
+            $templateProcessor->setValue('profession', '');
+            $templateProcessor->setValue('monthly_income', '');
+            $templateProcessor->setValue('proof_of_income', '');
+            
+            $templateProcessor->setValue('listahanan', '');
+            $templateProcessor->setValue('four_ps_mcct', '');
+            $templateProcessor->setValue('senior_citizen', '');
+            $templateProcessor->setValue('pamana', '');
+            $templateProcessor->setValue('kia_kipo', '');
+            $templateProcessor->setValue('lgu_sponsored', '');
+            $templateProcessor->setValue('nga_sponsored_private_sponsored', '');
+            $templateProcessor->setValue('person_with_disability', '');
+            $templateProcessor->setValue('pwd_id_no', '');
+            $templateProcessor->setValue('bangsamoro_normalization', '');
+            
+            $templateProcessor->setValue('pos_financially_incapable', '');
+            $templateProcessor->setValue('financially_incapable', '');
+            
+            $templateProcessor->setValue('from_correction_name', '');
+            $templateProcessor->setValue('from_correction_birth', '');
+            $templateProcessor->setValue('from_correction_sex', '');
+            $templateProcessor->setValue('from_correction_civil_status', '');
+            $templateProcessor->setValue('from_update_general', '');
+            $templateProcessor->setValue('to_correction_name', '');
+            $templateProcessor->setValue('to_correction_birth', '');
+            $templateProcessor->setValue('to_correction_sex', '');
+            $templateProcessor->setValue('to_correction_civil_status', '');
+            $templateProcessor->setValue('to_update_general', '');
+        }
+
+        $memberNameFull = trim(
+            $patient->member_first_name . ' ' .
+            ($patient->member_middle_name ?? '') . ' ' .
+            $patient->member_last_name . ' ' .
+            ($patient->member_extension_name ?? '')
+        );
+
+        $memberNameFull = strtoupper($memberNameFull); // Convert to uppercase
+        // Ensure your template contains the placeholder ${member_full_name}
+        $templateProcessor->setValue('member_full_name', $memberNameFull);
+
+        // Get today's date using Carbon and format it as mm/dd/yyyy
+        $today = Carbon::now()->format('m/d/Y');
+        // Insert today's date into the template.
+        // Ensure your template contains the placeholder ${today_date}
+        $templateProcessor->setValue('today_date', $today);
         
+
+
         // Save generated document
         $outputPath = storage_path("app/generated_docs/pmrf_{$health_record_id}.docx");
         $templateProcessor->saveAs($outputPath);
@@ -610,7 +1037,7 @@ class AdminPatientController extends Controller
                         ->addDays(61)
                         ->diffInDays(Carbon::now()));
                 } else {
-                    $patient->member_date_of_expiry = 'N/A';
+                    $patient->member_date_of_expiry = '';
                     $patient->member_remaining_days = 0;
                 }
             
@@ -651,7 +1078,7 @@ class AdminPatientController extends Controller
                         $dependent->attachment_type = $dependent->attachment_type_2;
                     } else {
                         $dependent->attachment_link = 'No Attachment';
-                        $dependent->attachment_type = 'N/A';
+                        $dependent->attachment_type = '';
                     }
             
                     return $dependent;

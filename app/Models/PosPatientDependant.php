@@ -22,6 +22,7 @@ class PosPatientDependant extends Model implements Auditable
         'dependent_extension_name',
         'dependent_relationship',
         'dependent_date_of_birth',
+        'dependent_citizenship',
         'dependent_mononym',
         'permanent_disability',
         'attachment_type_2',
