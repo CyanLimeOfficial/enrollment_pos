@@ -21,6 +21,7 @@ class CreateUsersTable extends Migration
             $table->string('middle_name')->nullable(); // Middle name (optional)
             $table->string('last_name'); // Last name
             $table->string('suffix')->nullable(); // Suffix (optional)
+            $table->boolean('is_active')->default(0); // Suffix (optional)
             $table->timestamps(); // Created_at and updated_at
         });
     }

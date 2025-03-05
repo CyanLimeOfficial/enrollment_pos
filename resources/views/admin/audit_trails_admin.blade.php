@@ -358,10 +358,10 @@
               <div class="col-lg-12">
                 <div class="card-style mb-30">
                 <div class="title">
-                  <h2>User Management</h2>
+                  <h2>Audit Trails</h2>
                 </div>
                   <p class="text-sm mb-20">
-                    List of registered users.
+                    User's Interaction record with the system.
                   </p>
                   <div class="container mt-3">
                       @if (session('success'))

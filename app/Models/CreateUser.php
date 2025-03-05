@@ -15,7 +15,8 @@ class CreateUser extends Model implements Auditable
 
     protected $fillable = [
         'username', 'password', 'email', 'number', 'first_name', 
-        'middle_name', 'last_name', 'suffix', 'profile_picture', 'user_type'
+        'middle_name', 'last_name', 'suffix', 'profile_picture',
+        'user_type', 'is_active'
     ];
 
     protected $hidden = [

@@ -11,13 +11,19 @@ use App\Models\User;
 class LoginController extends Controller
 {
     /**
-     * Display the login form.
+     * Display the login form or redirect based on session.
      *
-     * @return \Illuminate\View\View
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function showLoginForm()
     {
-        return view('auth.login'); // This should be your login form
+        // Check if user is already authenticated
+        if (Auth::check()) {
+            return $this->redirectBasedOnUserType();
+        }
+
+        // Redirect to `/index` instead of `auth.login`
+        return view('login');
     }
 
     /**
@@ -33,22 +39,29 @@ class LoginController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
-    
+
+        // Find user by username
+        $user = User::where('username', $request->username)->first();
+
+        // Check if user exists and is active
+        if ($user && $user->is_active == 0) {
+            return back()->withErrors([
+                'username' => 'Your account has been deactivated. Please contact the administrator.',
+            ]);
+        }
+
         // Attempt to log the user in
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password], $request->filled('remember'))) {
+        if ($user && Auth::attempt(['username' => $request->username, 'password' => $request->password], $request->filled('remember'))) {
             // Regenerate session to avoid session fixation
             $request->session()->regenerate();
-    
-            // Get the user
-            $user = Auth::user();
-    
+
             // Check if profile picture exists and convert to base64
             $profile_picture_base64 = null;
             if ($user->profile_picture) {
                 // Assuming profile_picture is stored as a BLOB in the database
                 $profile_picture_base64 = 'data:image/jpeg;base64,' . base64_encode($user->profile_picture);
             }
-    
+
             // Store user details in session
             session([
                 'first_name' => $user->first_name,
@@ -59,23 +72,46 @@ class LoginController extends Controller
                 'email' => $user->email,
                 'profile_picture' => $profile_picture_base64, // Store the base64 image in session
             ]);
-    
-            // Check the user_type and redirect accordingly
-            if (Auth::user()->user_type === 'Admin') {
-                // Redirect to admin page if user type is Admin
-                return redirect()->intended('/admin');
-            } else {
-                // Redirect to the index page if user type is not Admin
-                return redirect('/index');
-            }
+
+            // Redirect based on user type
+            return $this->redirectBasedOnUserType();
         }
-    
+
         // Authentication failed, redirect back with an error message
         return back()->withErrors([
             'username' => 'The provided credentials do not match our records.',
         ]);
     }
-    
+
+    /**
+     * Redirect user based on their type.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function redirectBasedOnUserType()
+    {
+        if (Auth::user()->user_type === 'Admin') {
+            return redirect()->intended('/admin');
+        }
+
+        return redirect()->intended('/index');
+    }
+
+    /**
+     * Check session and redirect to login if no active session.
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function checkSession()
+    {
+        // If no active authentication, redirect to login
+        if (!Auth::check()) {
+            return redirect('/index');
+        }
+
+        // If authenticated, redirect based on user type
+        return $this->redirectBasedOnUserType();
+    }
 
     /**
      * Logout the user and invalidate the session.

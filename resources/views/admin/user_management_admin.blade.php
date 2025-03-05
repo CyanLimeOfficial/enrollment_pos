@@ -396,25 +396,33 @@
                         <tbody>
                             @foreach ($users as $user)
                                 <tr>
-                                    <td>
-                                        <div class="action">
-                                            <!-- Password Reset Button -->
-                                            <form action="{{ route('admin.user-management.reset-password', $user->id) }}" method="POST" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-link text-secondary" title="Reset Password" onclick="return confirm('Are you sure you want to reset the password?')">
-                                                    <i class="lni lni-key"></i>
-                                                </button>
-                                            </form>
-                                            <!-- Delete User -->
-                                            <form action="{{ route('admin.user-management.delete', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirmDeletion(event);">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-link text-danger" title="Delete User">
-                                                    <i class="lni lni-trash-can"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
+                                  <td>
+                                    <div class="action">
+                                        <!-- Activation/Deactivation Button -->
+                                        <form action="{{ route('admin.user-management.toggle-status', $user->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-link text-{{ $user->is_active ? 'success' : 'danger' }}" title="{{ $user->is_active ? 'Deactivate User' : 'Activate User' }}">
+                                                <i class="lni lni-{{ $user->is_active ? 'checkmark-circle' : 'cross-circle' }}"></i>
+                                            </button>
+                                        </form>
+                                        <!-- Password Reset Button -->
+                                        <form action="{{ route('admin.user-management.reset-password', $user->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link text-secondary" title="Reset Password" onclick="return confirm('Are you sure you want to reset the password?')">
+                                                <i class="lni lni-key"></i>
+                                            </button>
+                                        </form>
+                                        <!-- Delete User -->
+                                        <form action="{{ route('admin.user-management.delete', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirmDeletion(event);">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-link text-danger" title="Delete User">
+                                                <i class="lni lni-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                                     <td><a href="#0">Number: {{ $user->id }}</a></td>
                                     <td><a href="#0">{{ $user->user_type }}</a></td>
                                     <td>{{ $user->username }}</td>

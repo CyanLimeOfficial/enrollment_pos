@@ -14,16 +14,18 @@ use App\Http\Controllers\Admin\AdminTransmittalController;
 use App\Http\Controllers\Admin\AdminUserManagementController;
 use App\Http\Controllers\Admin\AuditTrailController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Middleware\CheckUserStatus;
 use App\Models\User;
 use App\Models\create_user;
 
 // Redirect root URL to /index
 Route::redirect('/', '/index');
 
-// Show the login form (default route for login page)
+
+// Show the login form
 Route::get('/index', function () {
-    return view('login');
-});
+    return view('auth.login');
+})->name('login.form');  // Changed name to avoid conflicts
 
 // Handle the login request
 Route::post('/login', [LoginController::class, 'login'])->name('login');
@@ -123,7 +125,13 @@ Route::prefix('/admin')->middleware('auth')->group(function () {
     // Password Reset
     Route::post('/admin/user-management/reset-password/{id}', [AdminUserManagementController::class, 'resetPassword'])
         ->name('admin.user-management.reset-password');
-        
+    // Toggle Deactivate / Activate of User
+    Route::patch('/admin/user-management/toggle-status/{id}', [AdminUserManagementController::class, 'toggleStatus'])
+        ->name('admin.user-management.toggle-status');
+    // Middleware for User Deactivation
+    Route::middleware(['auth', CheckUserStatus::class])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
 
     // ============= ADD USER ====================
     // Handles Add User to store to database  

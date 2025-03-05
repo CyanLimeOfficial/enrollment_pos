@@ -9,6 +9,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\CreateUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 
 class AdminUserManagementController extends Controller
@@ -93,6 +95,23 @@ class AdminUserManagementController extends Controller
     {
         return str_pad(random_int(0, 99999), 5, '0', STR_PAD_LEFT); // Ensures 5 digits
     }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+    
+        // Toggle the user's active status
+        $user->is_active = !$user->is_active;
+        $user->save();
+    
+        // If the user is deactivated, delete their session
+        if (!$user->is_active) {
+            DB::table('sessions')->where('user_id', $user->id)->delete(); // Remove session
+        }
+    
+        return redirect()->route('admin.user-management')->with('success', 'User status updated successfully.');
+    }
+    
     
     public function storeUser(Request $request)
     {
