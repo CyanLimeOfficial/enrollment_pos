@@ -148,7 +148,7 @@ class AdminPatientListController extends Controller
     }
 
     public function downloadByTransmittalId($transmittalId)
-{
+    {
     // Find the transmittal record by comparing the transmittal_id string.
     // This compares the given string with the stored transmittal_id column.
     $transmittal = \App\Models\Transmittal::where('transmittal_id', $transmittalId)->firstOrFail();

@@ -15,6 +15,7 @@ class CreatePosPatientsTable extends Migration
     {
         Schema::create('pos_patients', function (Blueprint $table) {
             $table->id('health_record_id'); // Primary key, auto-increment
+            
             $table->string('philhealth_id')->unique(); // Required
             $table->enum('purpose', ['Registration', 'Updating/Amendment']); // Required
             $table->string('provider_konsulta')->nullable(); // Optional
@@ -68,6 +69,8 @@ class CreatePosPatientsTable extends Migration
             $table->binary('attachment_1')->nullable(); // Required
             $table->boolean('archive_lock_1')->nullable();
             $table->string('transmittal_id_1')->nullable();
+
+
             // Timestamps
             $table->timestamps();
         });

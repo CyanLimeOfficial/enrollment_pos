@@ -732,9 +732,6 @@ class AdminPatientController extends Controller
             $templateProcessor->setValue('pwd_id_no', $memberUpdate->pwd_id_no ?? '');
             $templateProcessor->setValue('bangsamoro_normalization', ($memberUpdate->bangsamoro_normalization) ? '✓' : '');
             
-            $templateProcessor->setValue('pos_financially_incapable', ($memberUpdate->pos_financially_incapable) ? '✓' : '');
-            $templateProcessor->setValue('financially_incapable', ($memberUpdate->financially_incapable) ? '✓' : '');
-            
             $templateProcessor->setValue('from_correction_name', strtoupper($memberUpdate->from_correction_name ?? ''));
             $templateProcessor->setValue('from_correction_birth', strtoupper($memberUpdate->from_correction_birth ?? ''));
             $templateProcessor->setValue('from_correction_sex', strtoupper($memberUpdate->from_correction_sex ?? ''));
@@ -966,13 +963,6 @@ class AdminPatientController extends Controller
             return response()->json(['error' => 'Something went wrong during export.'], 500);
         }
     }
-    
-    
-    
-    
-    
-    
-
     
     /**
      * Redirect to the patient management page.
@@ -1500,15 +1490,6 @@ class AdminPatientController extends Controller
             })
         ]);
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     public function getPatientDetails($id)
     {
@@ -1759,8 +1740,22 @@ class AdminPatientController extends Controller
         \DB::beginTransaction();
 
         try {
+
+            // Get the logged-in user
+            $user = auth()->user();
+
+            // Build the user's full name
+            $userFullName = trim(implode(' ', [
+                $user->first_name,
+                $user->middle_name,
+                $user->last_name,
+                $user->suffix,
+            ]));
+
             // Store the primary PosPatient record
             $patient = PosPatient::create([
+                'recorded_by_user_id' => $user->id, // Store the user ID
+                'recorded_by_user_full_name' => $userFullName, // Store the user's full name
                 'philhealth_id' => $request->philhealth_id,
                 'purpose' => $request->purpose,
                 'provider_konsulta' => $request->provider_konsulta,

@@ -19,6 +19,8 @@ class PosPatient extends Model implements Auditable
 
     // Define the fields that are mass assignable
     protected $fillable = [
+        'recorded_by_user_id',
+        'recorded_by_user_full_name',
         'philhealth_id',
         'purpose',
         'provider_konsulta',
