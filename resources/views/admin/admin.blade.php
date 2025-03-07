@@ -654,13 +654,42 @@
                   </div>
                   <!-- End Title -->
                   <div class="chart">
-                    <canvas id="Chart1" style="width: 100%; height: 400px;"></canvas>
+                    <canvas id="Chart2" style="width: 100%; height: 400px;"></canvas>
                   </div>
                   <!-- End Chart -->
                 </div>
               </div>
               <!-- end col -->
-            </div>
+          </div>
+
+                      <!-- End Col -->
+                      <div class="col-lg-5">
+                        <div class="card-style mb-30">
+                          <div class="title d-flex flex-wrap align-items-center justify-content-between">
+                            <div class="left">
+                              <h6 class="text-medium mb-30">Sales/Revenue</h6>
+                            </div>
+                            <div class="right">
+                              <div class="select-style-1">
+                                <div class="select-position select-sm">
+                                  <select class="light-bg">
+                                    <option value="">Yearly</option>
+                                    <option value="">Monthly</option>
+                                    <option value="">Weekly</option>
+                                  </select>
+                                </div>
+                              </div>
+                              <!-- end select -->
+                            </div>
+                          </div>
+                          <!-- End Title -->
+                          <div class="chart">
+                            <canvas id="Chart1" style="width: 100%; height: 400px;"></canvas>
+                          </div>
+                          <!-- End Chart -->
+                        </div>
+                      </div>
+                      <!-- End Col -->
         </div>
 
         <!-- end container -->
@@ -767,7 +796,7 @@
               backgroundColor: "transparent",
               borderColor: "#065b34",
               data: [
-                600, 800, 750, 880, 940, 880, 900, 770, 920, 890, 976, 1100,
+                1000, 800, 750, 880, 940, 880, 900, 770, 920, 890, 976, 1100,
               ],
               pointBackgroundColor: "transparent",
               pointHoverBackgroundColor: "#065b34",
@@ -857,26 +886,15 @@
         },
       });
       // =========== chart one end
-
+    // Pass PHP arrays to JavaScript
+    const labels = @json($labels);
+    const data = @json($data);
       // =========== chart two start
       const ctx2 = document.getElementById("Chart2").getContext("2d");
       const chart2 = new Chart(ctx2, {
         type: "bar",
         data: {
-          labels: [
-            "Jan",
-            "Fab",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
+          labels: labels,
           datasets: [
             {
               label: "",
@@ -884,9 +902,7 @@
               borderRadius: 30,
               barThickness: 6,
               maxBarThickness: 8,
-              data: [
-                600, 700, 1000, 700, 650, 800, 690, 740, 720, 1120, 876, 900,
-              ],
+              data: data,
             },
           ],
         },
@@ -1140,7 +1156,7 @@
               borderWidth: 5,
               barThickness: 20,
               maxBarThickness: 20,
-              data: [600, 700, 1000, 700, 650, 800],
+              data: [800, 700, 1000, 700, 650, 800],
             },
             {
               label: "",

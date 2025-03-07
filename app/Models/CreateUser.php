@@ -59,4 +59,5 @@ class CreateUser extends Model implements Auditable
 
         return $data;
     }
+
 }

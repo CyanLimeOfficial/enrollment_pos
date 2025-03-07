@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
+use App\Models\User;
+
 
 class PosPatient extends Model implements Auditable
 {
@@ -114,4 +116,11 @@ class PosPatient extends Model implements Auditable
     {
         return $this->hasMany(PosPatientDependant::class, 'health_record_id_relation_2', 'health_record_id');
     }
+
+        // Define the relationship with the User model
+        public function recordedBy()
+        {
+            return $this->belongsTo(User::class, 'recorded_by_user_id', 'id');
+        }
+
 }
